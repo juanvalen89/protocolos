@@ -50,6 +50,30 @@ class Protocolo(models.Model):
                                ("datos bancarios", self.datos_bancarios)] if not v.strip()]
 
 
+class Documento(models.Model):
+    """Archivos del estudio (protocolo, presupuesto, cartas de pago). Solo los ve Dirección.
+
+    Se guardan en la base porque el disco del servidor se borra en cada publicación."""
+    class Tipo(models.TextChoices):
+        PROTOCOLO = "protocolo", "Protocolo"
+        PRESUPUESTO = "presupuesto", "Presupuesto"
+        CARTA = "carta", "Carta de pago"
+        OTRO = "otro", "Otro"
+
+    protocolo = models.ForeignKey(Protocolo, null=True, blank=True, on_delete=models.CASCADE, related_name="documentos")
+    tipo = models.CharField(max_length=12, choices=Tipo.choices)
+    nombre = models.CharField(max_length=160)
+    contenido = models.BinaryField()
+    peso = models.PositiveIntegerField(default=0)
+    subido = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["tipo", "nombre"]
+
+    def __str__(self):
+        return self.nombre
+
+
 class Medico(models.Model):
     nombre = models.CharField(max_length=80, unique=True)
     externo = models.BooleanField(

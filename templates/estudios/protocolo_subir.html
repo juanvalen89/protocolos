@@ -1,17 +1,21 @@
 {% extends "base.html" %}
 {% block contenido %}
 <h1>Protocolo nuevo</h1>
-<p class="bajada">Subí el presupuesto del sitio (el Excel de la CRO, con una columna por visita). El sistema lee las visitas, calcula el precio de cada una con el overhead y te lo muestra para revisar antes de crear nada.</p>
+<p class="bajada">Subí todo lo del estudio de una vez: el presupuesto del sitio (el Excel de la CRO, con una columna por visita), el protocolo y las cartas de pago que ya tengas. El sistema lee las visitas y sus precios, lee cada carta, las compara con el presupuesto y te muestra todo para revisar antes de crear nada.</p>
 {% if error %}<div class="aviso error">{{ error }}</div>{% endif %}
 <div class="panel" style="max-width:620px">
   <form method="post" enctype="multipart/form-data">{% csrf_token %}
     <p><label for="nombre">Nombre corto del estudio</label><input id="nombre" name="nombre" maxlength="60" required placeholder="Por ejemplo: MALBEC"></p>
     <p><label for="codigo_cro">Código de la CRO (opcional)</label><input id="codigo_cro" name="codigo_cro" maxlength="40" placeholder="Por ejemplo: EYEB1014"></p>
     <p><label for="archivo">Presupuesto del sitio (.xlsx)</label><input type="file" id="archivo" name="archivo" accept=".xlsx" required></p>
+    <p><label for="protocolo_pdf">Protocolo del estudio (.pdf, opcional)</label><input type="file" id="protocolo_pdf" name="protocolo_pdf" accept=".pdf">
+      <span class="ayuda">Queda guardado en Documentos para consultarlo. Las visitas y los precios salen del presupuesto, no de este archivo.</span></p>
+    <p><label for="cartas">Cartas de pago (.pdf, opcional: podés elegir varias)</label><input type="file" id="cartas" name="cartas" accept=".pdf" multiple>
+      <span class="ayuda">Las que lleguen más adelante se suben en Cobros → Subir carta de pago.</span></p>
     <p><label for="base">Copiar las tarifas de los médicos de</label>
       <select id="base" name="base"><option value="">No copiar: arrancar con tarifas en cero</option>{% for p in protocolos %}<option value="{{ p.id }}" {% if forloop.first %}selected{% endif %}>{{ p.nombre }}</option>{% endfor %}</select>
       <span class="ayuda">También copia los datos del sitio y del banco para las facturas. Después se ajusta todo en Configuración.</span></p>
-    <button class="boton">Leer el presupuesto</button>
+    <button class="boton">Leer los archivos</button>
   </form>
 </div>
 {% endblock %}

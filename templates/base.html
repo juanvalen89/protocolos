@@ -118,7 +118,8 @@ a.tarjeta:hover{background:var(--celeste-claro)}
   <a href="{% url 'cobros' %}" {% if r == 'cobros' or r == 'factura_nueva' %}class="activo"{% endif %}>Cobros al sponsor</a>
   <a href="{% url 'reparto' %}" {% if r == 'reparto' or r == 'gasto_nuevo' %}class="activo"{% endif %}>Reparto</a>
   <span class="separador"></span>
-  <a href="{% url 'protocolo_subir' %}" {% if 'protocolo_' in r %}class="activo"{% endif %}>+ Protocolo</a>
+  <a href="{% url 'protocolo_documentos' %}" {% if r == 'protocolo_documentos' %}class="activo"{% endif %}>Documentos</a>
+  <a href="{% url 'protocolo_subir' %}" {% if r == 'protocolo_subir' or r == 'protocolo_revisar' %}class="activo"{% endif %}>+ Protocolo</a>
   <a href="/administracion/">Configuración</a>
   {% endif %}
   {% endwith %}

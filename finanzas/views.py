@@ -234,17 +234,11 @@ def carta_subir(request):
                              f"({protocolo.codigo_cro}). Cambiá de protocolo arriba y subila de nuevo.")
             if not error:
                 with transaction.atomic():
-                    carta, nueva = CartaPago.objects.get_or_create(
-                        protocolo=protocolo, request_id=leida["request_id"],
-                        defaults={"fecha": leida["fecha"], "monto_usd": leida["monto"],
-                                  "periodo": cartas.periodo(leida["fecha"])})
-                    if not carta.items.exists():
-                        ItemCarta.objects.bulk_create([
-                            ItemCarta(carta=carta, secuencia=sec, codigo_paciente=codigo, nombre_visita=visita, monto_usd=monto)
-                            for sec, codigo, visita, monto in leida["items"]])
-                        messages.success(request, f"Carta {carta.periodo} leída: {len(leida['items'])} renglones por USD {leida['monto']}.")
-                    else:
-                        messages.warning(request, f"La carta {carta.request_id} ya estaba cargada: te muestro su conciliación.")
+                    carta, cargada = cartas.guardar(protocolo, leida)
+                if cargada:
+                    messages.success(request, f"Carta {carta.periodo} leída: {len(leida['items'])} renglones por USD {leida['monto']}.")
+                else:
+                    messages.warning(request, f"La carta {carta.request_id} ya estaba cargada: te muestro su conciliación.")
                 return redirect("carta_detalle", carta.id)
     return render(request, "finanzas/carta_subir.html", {"protocolo": protocolo, "error": error})
 

@@ -5,7 +5,7 @@ from decimal import Decimal
 
 from estudios.models import Visita
 
-from .models import ItemFactura
+from .models import CartaPago, ItemCarta, ItemFactura
 
 MESES = {m: i for i, m in enumerate(["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"], 1)}
 
@@ -78,6 +78,19 @@ def _como_en_el_pdf(texto, pegado):
 
 def es_ajuste(item):
     return item.nombre_visita.startswith(AJUSTE) or item.monto_usd < 0
+
+
+def guardar(protocolo, leida):
+    """Crea la carta con sus renglones (o completa el detalle de una ya cargada). Devuelve (carta, se_cargó)."""
+    carta, _ = CartaPago.objects.get_or_create(
+        protocolo=protocolo, request_id=leida["request_id"],
+        defaults={"fecha": leida["fecha"], "monto_usd": leida["monto"], "periodo": periodo(leida["fecha"])})
+    if carta.items.exists():
+        return carta, False
+    ItemCarta.objects.bulk_create([
+        ItemCarta(carta=carta, secuencia=sec, codigo_paciente=codigo, nombre_visita=visita, monto_usd=monto)
+        for sec, codigo, visita, monto in leida["items"]])
+    return carta, True
 
 
 def _decimal(texto):

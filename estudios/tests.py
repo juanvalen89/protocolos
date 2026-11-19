@@ -10,7 +10,8 @@ from cuentas.models import Usuario
 from estudios.models import Medico, Paciente, Protocolo, Realizacion, TipoVisita, Visita
 from finanzas import servicios
 
-PANTALLAS_CON_DINERO = ["tablero", "medicos", "pago_nuevo", "cobros", "factura_nueva", "reparto", "gasto_nuevo"]
+PANTALLAS_CON_DINERO = ["tablero", "medicos", "pago_nuevo", "cobros", "factura_nueva", "reparto", "gasto_nuevo",
+                        "protocolo_subir", "protocolo_documentos"]
 
 
 class Base(TestCase):

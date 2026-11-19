@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Medico, Paciente, Procedimiento, Protocolo, TipoVisita
+from .models import Documento, Medico, Paciente, Procedimiento, Protocolo, TipoVisita
 
 
 class ProcedimientoInline(admin.TabularInline):
@@ -30,3 +30,10 @@ class MedicoAdmin(admin.ModelAdmin):
 class PacienteAdmin(admin.ModelAdmin):
     list_display = ["codigo", "protocolo", "estado", "derivado_por"]
     list_filter = ["protocolo", "estado"]
+
+
+@admin.register(Documento)
+class DocumentoAdmin(admin.ModelAdmin):
+    list_display = ["nombre", "tipo", "protocolo", "subido"]
+    list_filter = ["protocolo", "tipo"]
+    exclude = ["contenido"]

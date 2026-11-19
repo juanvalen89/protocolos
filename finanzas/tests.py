@@ -237,6 +237,51 @@ class ProtocoloDesdePresupuesto(Base):
         self.client.post(reverse("protocolo_subir"), {"nombre": "OTRA", "archivo": SimpleUploadedFile("p.xlsx", self._excel())})
         self.assertContains(self.client.get(reverse("protocolo_revisar")), "Ya hay un protocolo")
 
+    CARTA = ["Invoice Request Form", "Request ID: PYRQ-007001", "14-Jan-2027", "Site #: 77",
+             "Re: Protocol #: ABCD1234 (Prueba)", "Protocol Entitled: Estudio de prueba", "Dear Dr.",
+             "in the amount of USD 1,310.00", "Visit Sequence Subject Name Amount",
+             "1 77-10001 Screening USD 760.00", "2 77-10001 Day 1 USD 1,135.00", "77-10001 Ad Hoc (USD 585.00)",
+             "Please include the following items"]
+
+    def test_alta_con_presupuesto_protocolo_y_cartas(self):
+        from estudios.models import Documento
+        r = self.client.post(reverse("protocolo_subir"), {
+            "nombre": "PRUEBA", "base": self.protocolo.id, "archivo": SimpleUploadedFile("presupuesto.xlsx", self._excel()),
+            "protocolo_pdf": SimpleUploadedFile("protocolo.pdf", pdf_con_texto(["Protocolo de prueba"])),
+            "cartas": [SimpleUploadedFile("carta q4.pdf", pdf_con_texto(self.CARTA))]})
+        self.assertRedirects(r, reverse("protocolo_revisar"))
+        html = self.client.get(reverse("protocolo_revisar")).content.decode()
+        self.assertIn("PYRQ-007001", html)
+        self.assertIn("Cierra y coincide con el presupuesto", html)
+        self.assertIn("ABCD1234", html)                       # el código de la CRO sale de la carta
+        self.assertFalse(Protocolo.objects.filter(codigo="XYZ-001").exists())
+        self.client.post(reverse("protocolo_revisar"))
+        nuevo = Protocolo.objects.get(codigo="XYZ-001")
+        self.assertEqual(nuevo.codigo_cro, "ABCD1234")
+        carta = CartaPago.objects.get(protocolo=nuevo)
+        self.assertEqual((carta.request_id, carta.monto_usd, carta.items.count()), ("PYRQ-007001", D("1310.00"), 3))
+        self.assertEqual(sorted(nuevo.documentos.values_list("tipo", flat=True)), ["carta", "presupuesto", "protocolo"])
+        self.assertContains(self.client.get(reverse("protocolo_documentos")), "protocolo.pdf")
+        documento = nuevo.documentos.get(tipo="protocolo")
+        r = self.client.get(reverse("documento_descargar", args=[documento.id]))
+        self.assertEqual((r.status_code, r.content[:5]), (200, b"%PDF-"))
+        # Los documentos de un estudio no se bajan parado en otro.
+        sesion = self.client.session; sesion["protocolo_id"] = self.protocolo.id; sesion.save()
+        self.assertEqual(self.client.get(reverse("documento_descargar", args=[documento.id])).status_code, 404)
+        self.assertEqual(Documento.objects.filter(protocolo=None).count(), 0)
+
+    def test_alta_rechaza_cartas_que_no_son_del_estudio(self):
+        from estudios.models import Documento
+        datos = lambda **mas: {"nombre": "PRUEBA", "archivo": SimpleUploadedFile("p.xlsx", self._excel()), **mas}
+        r = self.client.post(reverse("protocolo_subir"), datos(
+            codigo_cro="ZZZZ9999", cartas=[SimpleUploadedFile("c.pdf", pdf_con_texto(self.CARTA))]))
+        self.assertContains(r, "es una carta del estudio ABCD1234")
+        r = self.client.post(reverse("protocolo_subir"), datos(cartas=[SimpleUploadedFile("c.pdf", pdf_con_texto(["Hola"]))]))
+        self.assertContains(r, "c.pdf: No encontré el Request ID")
+        r = self.client.post(reverse("protocolo_subir"), datos(protocolo_pdf=SimpleUploadedFile("x.pdf", b"no soy un pdf")))
+        self.assertContains(r, "El protocolo tiene que ser un PDF")
+        self.assertEqual(Documento.objects.count(), 0)         # nada quedó guardado a medias
+
     def test_un_excel_cualquiera_se_rechaza(self):
         from openpyxl import Workbook
         salida = BytesIO()

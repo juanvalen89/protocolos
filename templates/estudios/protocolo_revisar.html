@@ -28,9 +28,20 @@
     <p class="ayuda">Los fijos se facturan como “otro ítem”. Los demás, si corresponden, se agregan en Configuración.</p>
   </div>
 </div>
-<p class="bajada">{% if base %}Las tarifas de los médicos se copian de {{ base.nombre }}.{% else %}Las tarifas de los médicos arrancan en cero.{% endif %}</p>
+<div class="panel tabla-ancha"><h2>Cartas de pago</h2>
+{% if leido.cartas %}
+<table>
+  <thead><tr><th>Período</th><th>Request ID</th><th>Fecha</th><th class="num">Importe</th><th class="num">Visitas</th><th class="num">Ajustes</th><th>Control</th></tr></thead>
+  <tbody>{% for c in leido.cartas %}<tr><td><b>{{ c.periodo }}</b></td><td>{{ c.request_id }}</td><td>{{ c.fecha|slice:"8:10" }}/{{ c.fecha|slice:"5:7" }}/{{ c.fecha|slice:"0:4" }}</td><td class="num">{{ c.monto|usd }}</td><td class="num">{{ c.visitas }}</td><td class="num">{{ c.ajustes }}</td>
+    <td>{% if not c.cierra %}<span class="chip vencida">Los renglones suman {{ c.suma|usd }}</span>{% elif c.distintas %}<span class="chip vencida">{{ c.distintas|length }} con otro importe</span>{% else %}<span class="chip ok">Cierra y coincide con el presupuesto</span>{% endif %}</td></tr>
+    {% if c.distintas %}<tr><td colspan="7" class="ayuda">No coinciden con el presupuesto: {{ c.distintas|join:", " }}</td></tr>{% endif %}{% endfor %}</tbody>
+</table>
+<p class="ayuda">Se cargan junto con el protocolo. Las facturas se generan desde Cobros cuando estén cargadas las visitas.</p>
+{% else %}<p class="ayuda">No subiste cartas de pago. Se pueden subir después en Cobros.</p>{% endif %}
+</div>
+<p class="bajada">{% if leido.protocolo_pdf %}El protocolo ({{ leido.protocolo_pdf }}) y los demás archivos quedan guardados en Documentos. {% endif %}{% if leido.codigo_cro %}Código de la CRO: {{ leido.codigo_cro }}. {% endif %}{% if base %}Las tarifas de los médicos se copian de {{ base.nombre }}.{% else %}Las tarifas de los médicos arrancan en cero.{% endif %}</p>
 <form method="post" class="barra-acciones">{% csrf_token %}
   {% if not existe and leido.codigo %}<button class="boton">Crear el protocolo</button>{% endif %}
-  <a class="boton secundario" href="{% url 'protocolo_subir' %}">Subir otro archivo</a>
+  <a class="boton secundario" href="{% url 'protocolo_subir' %}">Subir otros archivos</a>
 </form>
 {% endblock %}
