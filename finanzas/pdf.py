@@ -37,6 +37,10 @@ def renglones(factura):
     C = ItemFactura.Concepto
     filas = []
     for i in factura.items.select_related("visita__paciente", "visita__tipo", "realizacion__procedimiento"):
+        if i.concepto == C.AJUSTE:
+            sujeto, _, detalle = i.descripcion.partition(" · ")
+            filas.append(("-", sujeto, detalle.split(": ", 1)[-1], "Reconciliation per payment letter", i.monto_usd))
+            continue
         if i.visita is None:
             filas.append(("-", "-", i.descripcion, i.descripcion, i.monto_usd))
             continue

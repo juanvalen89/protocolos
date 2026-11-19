@@ -15,7 +15,7 @@
   <thead><tr><th>Sec.</th><th>Paciente</th><th>Visita</th><th class="num">Importe</th><th>Estado</th><th>Detalle</th></tr></thead>
   <tbody>
   {% for f in filas %}<tr><td>{{ f.item.secuencia }}</td><td>{{ f.item.codigo_paciente }}</td><td>{{ f.item.nombre_visita }}</td><td class="num">{{ f.item.monto_usd|usd }}</td>
-    <td>{% if f.estado == "ok" %}<span class="chip ok">Coincide</span>{% elif f.estado == "facturada" %}<span class="chip hecha">Facturada</span>{% elif f.estado == "monto" %}<span class="chip vencida">Importe distinto</span>{% else %}<span class="chip vencida">No está cargada</span>{% endif %}</td>
+    <td>{% if f.estado == "ok" %}<span class="chip ok">Coincide</span>{% elif f.estado == "facturada" %}<span class="chip hecha">Facturada</span>{% elif f.estado == "ajuste" %}<span class="chip pendiente">Ajuste</span>{% elif f.estado == "ajuste_facturado" %}<span class="chip hecha">Ajuste facturado</span>{% elif f.estado == "monto" %}<span class="chip vencida">Importe distinto</span>{% else %}<span class="chip vencida">No está cargada</span>{% endif %}</td>
     <td>{{ f.detalle }}</td></tr>{% endfor %}
   <tr class="total"><td colspan="3">Total de la carta</td><td class="num">{{ suma|usd }}</td><td colspan="2"></td></tr>
   </tbody>
@@ -23,7 +23,7 @@
 </div>
 <div class="dos">
   <div class="panel"><h2>Factura de visitas</h2>
-    {% if listas %}<p>{{ listas|length }} visita{{ listas|length|pluralize }} lista{{ listas|length|pluralize }} por <b>{{ total_listas|usd }}</b>, con el Request ID {{ carta.request_id }}.</p>
+    {% if listas %}<p>{{ listas|length }} visita{{ listas|length|pluralize }} lista{{ listas|length|pluralize }} {% if ajustes %}y {{ ajustes|length }} ajuste{{ ajustes|length|pluralize }} de la CRO {% endif %}por <b>{{ total_listas|usd }}</b>, con el Request ID {{ carta.request_id }}.</p>
     <form method="post">{% csrf_token %}<input type="hidden" name="que" value="visitas"><button class="boton">Generar la factura de visitas</button></form>
     {% else %}<p class="ayuda">No queda ninguna visita de esta carta por facturar.</p>{% endif %}
   </div>

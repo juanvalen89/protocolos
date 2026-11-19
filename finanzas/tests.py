@@ -56,6 +56,51 @@ class LecturaDeCartas(Base):
         self.assertEqual(sum(i[3] for i in q2["items"]), q2["monto"])
         self.assertEqual((cartas.periodo(q3["fecha"]), cartas.periodo(q2["fecha"])), ("Q3 2026", "Q2 2026"))
 
+    def test_carta_en_dos_paginas_con_ajustes_negativos(self):
+        """Formato de las cartas de BAROLO: la tabla sigue en la página 2 y trae descuentos entre paréntesis."""
+        texto = "\n".join([
+            "Invoice Request Form", "Request ID: PYRQ-003071", "13-Apr-2026", "Site #: 312",
+            "Re: Protocol #: EYEB1010 (Barolo)", "Protocol Entitled: A Randomized Study",
+            "Dear Dr. Rosendi", "payable items in the amount of USD 7,709.00. Below",
+            "Visit Sequence Subject Name Amount",
+            "5 312-13260 Week 12 USD 3,263.00", "6 312-13260 Week 16* USD 2,548.00",
+            "Invoice Request Form", "Request ID: PYRQ-003071",
+            "10 312-13260 Week 20* USD 2,548.00",
+            "   312-13260 Week 16 Post-IVT IOP", "Reconciliation* (USD 65.00)",
+            "   312-13260", "Week 20 IVT of study drug", "Reconciliation*", "", "(USD 585.00)",
+            "*Reconciliation concerns Subject 312-13260 visit W16 and W20 completed without IP injection",
+            "Please include the following items"])
+        carta = cartas.leer(texto, "312")
+        self.assertEqual((carta["request_id"], carta["monto"], carta["protocolo_cro"]), ("PYRQ-003071", D("7709.00"), "EYEB1010"))
+        self.assertEqual(carta["items"], [
+            ("5", "312-13260", "Week 12", D("3263.00")), ("6", "312-13260", "Week 16", D("2548.00")),
+            ("10", "312-13260", "Week 20", D("2548.00")),
+            ("", "312-13260", "Ajuste: Week 16 Post-IVT IOP", D("-65.00")),
+            ("", "312-13260", "Ajuste: Week 20 IVT of study drug", D("-585.00"))])
+        self.assertEqual(sum(i[3] for i in carta["items"]), carta["monto"])
+
+    def test_los_ajustes_van_en_la_factura_de_visitas(self):
+        renglones = ["Request ID: PYRQ-005001", "14-Jan-2027", "in the amount of USD 5,506.81", "Sequence Subject Name Amount",
+                     "1 312-21787 Screening USD 2,896.40", "2 312-21787 Day 1 USD 3,195.41",
+                     "312-21787 Ad Hoc (USD 585.00)", "Please include"]
+        self.client.post(reverse("carta_subir"), {"archivo": SimpleUploadedFile("a.pdf", pdf_con_texto(renglones))})
+        carta = CartaPago.objects.get(request_id="PYRQ-005001")
+        filas, _ = cartas.conciliar(carta)
+        self.assertEqual([f["estado"] for f in filas], ["ok", "ok", "ajuste"])
+        self.assertNotContains(self.client.get(reverse("carta_detalle", args=[carta.id])), "Los renglones suman")
+        self.client.post(reverse("carta_detalle", args=[carta.id]), {"que": "visitas"})
+        factura = Factura.objects.get(carta=carta)
+        self.assertEqual(factura.total, carta.monto_usd)
+        self.assertEqual(cartas.conciliar(carta)[0][2]["estado"], "ajuste_facturado")
+        self.assertEqual(self.client.get(reverse("factura_pdf", args=[factura.id])).status_code, 200)
+
+    def test_no_acepta_la_carta_de_otro_estudio(self):
+        renglones = ["Request ID: PYRQ-003481", "14-Jul-2026", "Re: Protocol #: EYEB1010 (Barolo)", "Protocol Entitled: X",
+                     "in the amount of USD 2,548.00", "Sequence Subject Name Amount", "9 312-13256 Week 28 USD 2,548.00", "Please include"]
+        r = self.client.post(reverse("carta_subir"), {"archivo": SimpleUploadedFile("b.pdf", pdf_con_texto(renglones))})
+        self.assertContains(r, "Esta carta es del estudio EYEB1010")
+        self.assertFalse(CartaPago.objects.filter(request_id="PYRQ-003481").exists())
+
     def test_un_pdf_cualquiera_se_rechaza_con_un_mensaje_claro(self):
         archivo = SimpleUploadedFile("otra.pdf", pdf_con_texto(["Hola, esto no es una carta"]), "application/pdf")
         r = self.client.post(reverse("carta_subir"), {"archivo": archivo})

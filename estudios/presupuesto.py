@@ -26,7 +26,7 @@ MAPA = [
     (r"\bFAF\b|autofluorescence", ["FAF"]),
     (r"\bFA\b|fluorescein angio", ["FA", "INY fluoresceína"]),
     (r"IVT of study drug", ["Inyección"]),
-    (r"blood samples? for safety", ["Extracción", "Laboratorio"]),
+    (r"blood samples? for safety|hemogram|\bCBC\b|chemistr", ["Extracción", "Laboratorio"]),
     (r"blood samples?", ["Extracción"]),
     (r"fellow eye(?!.*avastin)", ["Contralateral"]),
 ]

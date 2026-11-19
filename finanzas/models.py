@@ -88,6 +88,7 @@ class ItemFactura(models.Model):
         VIATICO = "viatico", "Viático"
         CONDICIONAL = "condicional", "Condicional"
         FIJO = "fijo", "Fijo del sitio"
+        AJUSTE = "ajuste", "Ajuste de la CRO"
 
     factura = models.ForeignKey(Factura, on_delete=models.CASCADE, related_name="items")
     concepto = models.CharField(max_length=12, choices=Concepto.choices)

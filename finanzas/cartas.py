@@ -22,12 +22,19 @@ def texto_de_pdf(archivo):
         raise CartaIlegible("El archivo no es un PDF que se pueda leer.") from error
 
 
-def leer(texto, sitio):
-    """Devuelve {request_id, fecha, monto, items:[(secuencia, código, visita, monto)]}.
+AJUSTE = "Ajuste"
 
-    El PDF de la CRO sale con las palabras partidas en renglones, así que se
-    trabaja sobre el texto sin espacios y se usa el número de sitio para
-    separar la secuencia del código de sujeto ("4" + "312-21165")."""
+
+def leer(texto, sitio):
+    """Devuelve {request_id, fecha, monto, protocolo_cro, items:[(secuencia, código, visita, monto)]}.
+
+    El PDF de la CRO a veces sale con las palabras partidas en renglones, así
+    que se trabaja sobre el texto sin espacios y se usa el número de sitio para
+    separar la secuencia del código de sujeto ("4" + "312-21165").
+
+    Además de las visitas, la carta puede traer ajustes: renglones sin
+    secuencia y con el importe entre paréntesis (por ejemplo, una visita hecha
+    sin inyección). Se leen con importe negativo y nombre "Ajuste: …"."""
     junto = re.sub(r"\s+", "", texto)
     # El Request ID y la fecha se buscan en el texto original: pegados quedarían unidos.
     pedido = re.search(r"Request\s*ID\s*:?\s*(PYRQ)\s*-\s*(\d+)", texto, re.I)
@@ -38,15 +45,39 @@ def leer(texto, sitio):
         raise CartaIlegible("No encontré la fecha de la carta.")
     fecha = date(int(cuando.group(3)), MESES[cuando.group(2).lower()], int(cuando.group(1)))
     total = re.search(r"amountofUSD([\d,]+\.\d{2})", junto, re.I)
+    estudio = re.search(r"Protocol#:([A-Z0-9-]+?)(?=\(|Protocol|Dear)", junto)
     cuerpo = junto.split("Amount", 2)[-1] if "Amount" in junto else junto
-    cuerpo = re.split(r"InvoiceRequestForm|Pleaseinclude", cuerpo)[0]
+    cuerpo = cuerpo.split("Pleaseinclude")[0]
+    # La tabla puede seguir en la página siguiente: se saca el encabezado repetido.
+    cuerpo = re.sub(rf"InvoiceRequestForm|RequestID:?PYRQ-?{pedido.group(2)}", "", cuerpo, flags=re.I)
     sitio = re.escape(sitio) if sitio else r"\d{3}"
-    items = [(m.group(1), m.group(2), _con_espacio(m.group(3)), _decimal(m.group(4)))
-             for m in re.finditer(rf"(\d{{1,2}})({sitio}-\d{{5}})(.+?)USD([\d,]+\.\d{{2}})", cuerpo)]
+    items = []
+    for m in re.finditer(rf"(\d{{1,2}})?({sitio}-\d{{5}})(.*?)(\()?USD([\d,]+\.\d{{2}})\)?", cuerpo):
+        secuencia, codigo, nombre, resta, monto = m.groups()
+        monto = _decimal(monto)
+        if resta or not secuencia:
+            detalle = _como_en_el_pdf(texto, nombre).replace("*", "")
+            detalle = " ".join(re.sub(r"reconciliation", "", detalle, flags=re.I).split())
+            items.append(("", codigo, f"{AJUSTE}: {detalle}"[:60], -monto if resta else monto))
+        else:
+            items.append((secuencia, codigo, _con_espacio(nombre.replace("*", "")), monto))
     if not items:
         raise CartaIlegible("No encontré renglones de visitas en la carta.")
     monto = _decimal(total.group(1)) if total else sum((i[3] for i in items), Decimal("0"))
-    return {"request_id": f"PYRQ-{pedido.group(2)}", "fecha": fecha, "monto": monto, "items": items}
+    return {"request_id": f"PYRQ-{pedido.group(2)}", "fecha": fecha, "monto": monto, "items": items,
+            "protocolo_cro": estudio.group(1) if estudio else ""}
+
+
+def _como_en_el_pdf(texto, pegado):
+    """Recupera los espacios de un tramo: 'Week16Post-IVTIOP' → 'Week 16 Post-IVT IOP'."""
+    if not pegado:
+        return ""
+    m = re.search(r"\s*".join(re.escape(c) for c in pegado), texto)
+    return " ".join(m.group(0).split()) if m else pegado
+
+
+def es_ajuste(item):
+    return item.nombre_visita.startswith(AJUSTE) or item.monto_usd < 0
 
 
 def _decimal(texto):
@@ -71,6 +102,10 @@ def fin_del_periodo(fecha):
     return date(f.year + (mes_fin == 12), mes_fin % 12 + 1, 1) - timedelta(days=1)
 
 
+def descripcion_ajuste(item):
+    return f"{item.codigo_paciente} · {item.nombre_visita}"[:120]
+
+
 def _clave(nombre):
     return re.sub(r"\s+", "", nombre).lower()
 
@@ -85,7 +120,16 @@ def conciliar(carta):
               .select_related("paciente", "tipo").prefetch_related("items_factura__factura")):
         visitas[(v.paciente.codigo, _clave(v.tipo.nombre))] = v
     filas, en_carta = [], set()
+    ajustes_facturados = {i.descripcion: i.factura for i in ItemFactura.objects.filter(
+        factura__carta=carta, concepto=ItemFactura.Concepto.AJUSTE).select_related("factura")}
     for item in carta.items.all():
+        if es_ajuste(item):
+            factura = ajustes_facturados.get(descripcion_ajuste(item))
+            filas.append({"item": item, "visita": None, "factura": factura,
+                          "estado": "ajuste_facturado" if factura else "ajuste",
+                          "detalle": f"Ya está en la factura {factura.numero}." if factura
+                          else "Descuento o ajuste de la CRO: va en la factura de visitas."})
+            continue
         v = visitas.get((item.codigo_paciente, _clave(item.nombre_visita)))
         factura = None
         if v is None:

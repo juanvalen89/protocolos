@@ -227,6 +227,12 @@ def carta_subir(request):
             except cartas.CartaIlegible as problema:
                 error = f"{problema} Si es otro formato, cargala a mano en Configuración → Cartas de pago."
             else:
+                de_otro = leida["protocolo_cro"] and protocolo.codigo_cro and \
+                    leida["protocolo_cro"].lower() != protocolo.codigo_cro.replace(" ", "").lower()
+                if de_otro:
+                    error = (f"Esta carta es del estudio {leida['protocolo_cro']} y estás parado en {protocolo.nombre} "
+                             f"({protocolo.codigo_cro}). Cambiá de protocolo arriba y subila de nuevo.")
+            if not error:
                 with transaction.atomic():
                     carta, nueva = CartaPago.objects.get_or_create(
                         protocolo=protocolo, request_id=leida["request_id"],
@@ -255,6 +261,7 @@ def carta_detalle(request, pk):
     filas, afuera = cartas.conciliar(carta)
     C = ItemFactura.Concepto
     listas = [f for f in filas if f["estado"] == "ok"]
+    ajustes = [f for f in filas if f["estado"] == "ajuste"]
     con_visita = [f["visita"] for f in filas if f["visita"] is not None]
     viaticos = [v for v in con_visita if protocolo.viatico_usd and not any(i.concepto == C.VIATICO for i in v.items_factura.all())]
     if request.method == "POST":
@@ -273,11 +280,17 @@ def carta_detalle(request, pk):
                     ItemFactura.objects.create(
                         factura=factura, concepto=concepto, visita=visita, monto_usd=monto,
                         descripcion=f"{visita.paciente.codigo} · {visita.tipo.nombre} · {C(concepto).label}")
+                if que == "visitas":
+                    # Los descuentos de la carta van en la misma factura, para que el total coincida.
+                    for f in ajustes:
+                        ItemFactura.objects.create(factura=factura, concepto=C.AJUSTE, monto_usd=f["item"].monto_usd,
+                                                   descripcion=cartas.descripcion_ajuste(f["item"]))
             messages.success(request, f"Factura {factura.numero} generada por USD {factura.total}. Ya podés descargar el PDF.")
             return redirect("cobros")
     return render(request, "finanzas/carta_detalle.html", {
         "protocolo": protocolo, "carta": carta, "filas": filas, "afuera": afuera, "listas": listas, "viaticos": viaticos,
-        "total_listas": sum((f["item"].monto_usd for f in listas), CERO),
+        "total_listas": sum((f["item"].monto_usd for f in listas + ajustes), CERO),
+        "ajustes": ajustes,
         "total_viaticos": protocolo.viatico_usd * len(viaticos),
         "problemas": [f for f in filas if f["estado"] in ("falta", "monto")],
         "suma": sum((f["item"].monto_usd for f in filas), CERO),
