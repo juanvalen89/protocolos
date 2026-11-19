@@ -167,3 +167,6 @@ if not DEBUG and not EN_PRUEBAS:
 
 # El bloqueo por usuario es deliberado (igual que en la app de presupuestos).
 SILENCED_SYSTEM_CHECKS = ["axes.W006"]
+
+# La cotización del Banco Nación se consulta en línea (no durante las pruebas).
+COTIZACION_EN_LINEA = not EN_PRUEBAS

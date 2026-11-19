@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block contenido %}
+<h1>Subir carta de pago</h1>
+<p class="bajada">Subí el PDF que manda la CRO cada trimestre (Invoice Request Form). El sistema lee las visitas, las compara con lo cargado y arma las facturas con el Request ID correcto.</p>
+{% if error %}<div class="aviso error">{{ error }}</div>{% endif %}
+<div class="panel" style="max-width:560px">
+  <form method="post" enctype="multipart/form-data">{% csrf_token %}
+    <p><label for="archivo">Carta de pago (PDF)</label><input type="file" id="archivo" name="archivo" accept="application/pdf,.pdf" required></p>
+    <button class="boton">Leer la carta</button>
+    <a class="boton secundario" href="{% url 'cobros' %}">Cancelar</a>
+  </form>
+</div>
+{% endblock %}

@@ -25,6 +25,17 @@ class Protocolo(models.Model):
     derivacion_usd = models.DecimalField(
         "pago al médico que deriva (USD)", max_digits=10, decimal_places=2, default=CERO,
         help_text="Se le debe al derivador cuando el paciente entra al estudio (Day 1).")
+    # Datos que van impresos en la factura. Los completa Dirección en Configuración.
+    datos_sitio = models.TextField(
+        "datos del sitio para la factura", blank=True,
+        help_text="Un dato por renglón: investigador, CUIT, número y nombre del sitio, dirección, teléfono, mail.")
+    facturar_a = models.TextField(
+        "facturar a (CRO)", blank=True,
+        help_text="Un dato por renglón: contacto, proyecto, razón social, dirección y VAT de la CRO.")
+    datos_bancarios = models.TextField(
+        "datos bancarios para el cobro", blank=True,
+        help_text="Un dato por renglón: banco, dirección, número de cuenta, ABA/routing y SWIFT. "
+                  "La CRO rechaza las facturas que no los traen.")
     activo = models.BooleanField(default=True)
 
     class Meta:
@@ -32,6 +43,11 @@ class Protocolo(models.Model):
 
     def __str__(self):
         return f"{self.nombre} ({self.codigo})"
+
+    @property
+    def faltan_datos_factura(self):
+        return [n for n, v in [("datos del sitio", self.datos_sitio), ("facturar a", self.facturar_a),
+                               ("datos bancarios", self.datos_bancarios)] if not v.strip()]
 
 
 class Medico(models.Model):

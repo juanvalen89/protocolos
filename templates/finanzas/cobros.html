@@ -8,7 +8,8 @@
   <div class="tarjeta {% if resumen.vencidas %}mal{% else %}alerta{% endif %}"><div class="rotulo">Facturado sin cobrar</div><div class="cifra">{{ resumen.por_cobrar|usd }}</div><div class="detalle">{{ resumen.vencido|usd }} vencido</div></div>
   <div class="tarjeta"><div class="rotulo">Realizado sin facturar</div><div class="cifra">{{ pendientes.total|usd }}</div></div>
 </div>
-<div class="barra-acciones"><a class="boton" href="{% url 'factura_nueva' %}">Registrar una factura</a></div>
+{% if protocolo.faltan_datos_factura %}<div class="aviso advertencia"><b>Faltan datos para el PDF de las facturas:</b> {{ protocolo.faltan_datos_factura|join:", " }}. Completalos en <a href="/administracion/estudios/protocolo/{{ protocolo.id }}/change/">Configuración → Protocolos</a>; la CRO rechaza las facturas que no los traen.</div>{% endif %}
+<div class="barra-acciones"><a class="boton" href="{% url 'carta_subir' %}">Subir carta de pago</a><a class="boton secundario" href="{% url 'factura_nueva' %}">Registrar una factura a mano</a></div>
 
 <div class="panel tabla-ancha"><h2>Facturas</h2>
 <table>
@@ -20,7 +21,7 @@
     <td>{{ f.request_id|default:"—" }}{% if f.request_id_no_coincide %}<span class="ayuda" style="color:var(--mal)">La carta dice {{ f.carta.request_id }}</span>{% endif %}</td>
     <td class="num">{{ f.total|usd }}</td>
     <td>{% if f.cobrada %}<span class="chip cobrada">Cobrada</span>{% elif f.vencimiento < hoy %}<span class="chip vencida">Vencida</span>{% else %}<span class="chip pendiente">Emitida</span>{% endif %}</td>
-    <td><form method="post" action="{% url 'factura_cobrada' f.id %}">{% csrf_token %}<button class="boton secundario chico">{% if f.cobrada %}Desmarcar{% else %}Marcar cobrada{% endif %}</button></form></td></tr>
+    <td style="white-space:nowrap"><form method="post" action="{% url 'factura_cobrada' f.id %}">{% csrf_token %}<a class="boton azul chico" href="{% url 'factura_pdf' f.id %}">PDF</a> <button class="boton secundario chico">{% if f.cobrada %}Desmarcar{% else %}Marcar cobrada{% endif %}</button></form></td></tr>
   {% endfor %}
   </tbody>
 </table>
@@ -29,9 +30,9 @@
 <div class="panel tabla-ancha"><h2>Cartas de pago recibidas</h2>
 <table>
   <thead><tr><th>Período</th><th>Fecha</th><th>Request ID</th><th class="num">Monto</th></tr></thead>
-  <tbody>{% for c in cartas %}<tr><td>{{ c.periodo }}</td><td>{{ c.fecha|date:"d/m/Y" }}</td><td>{{ c.request_id }}</td><td class="num">{{ c.monto_usd|usd }}</td></tr>{% endfor %}</tbody>
+  <tbody>{% for c in cartas %}<tr><td><a href="{% url 'carta_detalle' c.id %}"><b>{{ c.periodo }}</b></a></td><td>{{ c.fecha|date:"d/m/Y" }}</td><td>{{ c.request_id }}</td><td class="num">{{ c.monto_usd|usd }}</td></tr>{% endfor %}</tbody>
 </table>
-<p class="ayuda">Las cartas nuevas se cargan en Configuración → Cartas de pago.</p>
+<p class="ayuda">Tocá una carta para ver su conciliación. Las de Q2 y Q3 se cargaron sin el detalle: si subís su PDF, se completa.</p>
 </div>
 
 <div class="panel tabla-ancha" id="sin-facturar"><h2>Realizado sin facturar</h2>

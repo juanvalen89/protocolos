@@ -1,9 +1,10 @@
 """Pantallas con dinero. Todas son solo de Dirección (cuentas.permisos.solo_direccion)."""
-from datetime import date
+from datetime import date, timedelta
 from decimal import Decimal, InvalidOperation
 
 from django.contrib import messages
 from django.db import transaction
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
@@ -12,9 +13,10 @@ from cuentas.permisos import solo_direccion
 from estudios.models import Medico, Paciente, Realizacion, Visita
 from estudios.views import protocolo_actual
 
-from . import servicios
+from . import cartas, cotizacion, servicios
 from .forms import GastoForm, PagoMedicoForm
-from .models import CartaPago, Factura, Gasto, ItemFactura, PagoMedico
+from .models import CartaPago, Factura, Gasto, ItemCarta, ItemFactura, PagoMedico
+from .pdf import factura_pdf
 
 CERO = Decimal("0")
 
@@ -73,6 +75,9 @@ def medico_detalle(request, pk):
 def pago_nuevo(request):
     protocolo = protocolo_actual(request)
     inicial = {"fecha": timezone.localdate(), "medico": request.GET.get("medico"), "monto_usd": request.GET.get("monto")}
+    bna = cotizacion.dolar_bna_vendedor()
+    if bna:
+        inicial["cotizacion"] = bna[0]
     form = PagoMedicoForm(request.POST or None, initial=inicial)
     if request.method == "POST" and form.is_valid():
         pago = form.save(commit=False)
@@ -83,7 +88,7 @@ def pago_nuevo(request):
     return render(request, "finanzas/formulario.html", {
         "form": form, "titulo": "Registrar pago a un médico", "volver": "medicos",
         "ayuda": "El importe se guarda en dólares. Si se paga en pesos, poné la cotización y el sistema calcula el total.",
-        "bna": True})
+        "bna": True, "cotizacion_bna": bna})
 
 
 @solo_direccion
@@ -192,3 +197,88 @@ def gasto_nuevo(request):
     return render(request, "finanzas/formulario.html", {
         "form": form, "titulo": "Registrar un gasto del estudio", "volver": "reparto",
         "ayuda": "Lo que alguien pagó de su bolsillo se le devuelve antes de repartir."})
+
+
+@solo_direccion
+def factura_descargar(request, pk):
+    factura = get_object_or_404(Factura, pk=pk, protocolo=protocolo_actual(request))
+    p = factura.protocolo
+    nombre = f"Invoice {factura.numero} Protocol {p.codigo}{'_' + p.codigo_cro if p.codigo_cro else ''}.pdf"
+    respuesta = HttpResponse(factura_pdf(factura), content_type="application/pdf")
+    respuesta["Content-Disposition"] = f'attachment; filename="{nombre}"'
+    return respuesta
+
+
+# ---------------------------------------------------------------- cartas de pago
+
+@solo_direccion
+def carta_subir(request):
+    protocolo = protocolo_actual(request)
+    error = None
+    if request.method == "POST":
+        archivo = request.FILES.get("archivo")
+        if not archivo:
+            error = "Elegí el PDF de la carta de pago."
+        elif archivo.size > 5 * 1024 * 1024:
+            error = "El archivo pesa más de 5 MB: no parece una carta de pago."
+        else:
+            try:
+                leida = cartas.leer(cartas.texto_de_pdf(archivo), protocolo.sitio)
+            except cartas.CartaIlegible as problema:
+                error = f"{problema} Si es otro formato, cargala a mano en Configuración → Cartas de pago."
+            else:
+                with transaction.atomic():
+                    carta, nueva = CartaPago.objects.get_or_create(
+                        protocolo=protocolo, request_id=leida["request_id"],
+                        defaults={"fecha": leida["fecha"], "monto_usd": leida["monto"],
+                                  "periodo": cartas.periodo(leida["fecha"])})
+                    if not carta.items.exists():
+                        ItemCarta.objects.bulk_create([
+                            ItemCarta(carta=carta, secuencia=sec, codigo_paciente=codigo, nombre_visita=visita, monto_usd=monto)
+                            for sec, codigo, visita, monto in leida["items"]])
+                        messages.success(request, f"Carta {carta.periodo} leída: {len(leida['items'])} renglones por USD {leida['monto']}.")
+                    else:
+                        messages.warning(request, f"La carta {carta.request_id} ya estaba cargada: te muestro su conciliación.")
+                return redirect("carta_detalle", carta.id)
+    return render(request, "finanzas/carta_subir.html", {"protocolo": protocolo, "error": error})
+
+
+def _numero_siguiente(protocolo):
+    numeros = [int(n) for n in Factura.objects.filter(protocolo=protocolo).values_list("numero", flat=True) if n.isdigit()]
+    return f"{max(numeros, default=0) + 1:03d}"
+
+
+@solo_direccion
+def carta_detalle(request, pk):
+    protocolo = protocolo_actual(request)
+    carta = get_object_or_404(CartaPago, pk=pk, protocolo=protocolo)
+    filas, afuera = cartas.conciliar(carta)
+    C = ItemFactura.Concepto
+    listas = [f for f in filas if f["estado"] == "ok"]
+    con_visita = [f["visita"] for f in filas if f["visita"] is not None]
+    viaticos = [v for v in con_visita if protocolo.viatico_usd and not any(i.concepto == C.VIATICO for i in v.items_factura.all())]
+    if request.method == "POST":
+        que = request.POST.get("que")
+        hoy = timezone.localdate()
+        elegidas = [(C.VISITA, f["visita"], f["item"].monto_usd) for f in listas] if que == "visitas" else (
+            [(C.VIATICO, v, protocolo.viatico_usd) for v in viaticos] if que == "viaticos" else [])
+        if not elegidas:
+            messages.warning(request, "No hay nada para facturar de esta carta.")
+        else:
+            with transaction.atomic():
+                factura = Factura.objects.create(
+                    protocolo=protocolo, numero=_numero_siguiente(protocolo), fecha=hoy,
+                    vencimiento=hoy + timedelta(days=30), carta=carta, request_id=carta.request_id)
+                for concepto, visita, monto in elegidas:
+                    ItemFactura.objects.create(
+                        factura=factura, concepto=concepto, visita=visita, monto_usd=monto,
+                        descripcion=f"{visita.paciente.codigo} · {visita.tipo.nombre} · {C(concepto).label}")
+            messages.success(request, f"Factura {factura.numero} generada por USD {factura.total}. Ya podés descargar el PDF.")
+            return redirect("cobros")
+    return render(request, "finanzas/carta_detalle.html", {
+        "protocolo": protocolo, "carta": carta, "filas": filas, "afuera": afuera, "listas": listas, "viaticos": viaticos,
+        "total_listas": sum((f["item"].monto_usd for f in listas), CERO),
+        "total_viaticos": protocolo.viatico_usd * len(viaticos),
+        "problemas": [f for f in filas if f["estado"] in ("falta", "monto")],
+        "suma": sum((f["item"].monto_usd for f in filas), CERO),
+    })

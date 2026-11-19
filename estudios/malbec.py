@@ -4,9 +4,23 @@ carga hasta el 18/11/2026. Se cargan una sola vez, con la base vacía."""
 from datetime import date
 from decimal import Decimal as D
 
+# Lo que va impreso en la factura. El CUIT, el teléfono, el mail y los datos
+# bancarios NO están en el código: los completa Dirección en Configuración.
+DATOS_SITIO = """PI Name: Agustina C Palacio
+Site #: 312
+Site Name: Centro de Ojos Loria SRL
+Address: Loria 260
+City, State, Zip Code: Lomas de Zamora B1832IXF
+Country: Argentina"""
+FACTURAR_A = """Sonja Thukral, Study Senior Project Manager
+TFS Project/Dept to allocate the cost: MK-8748-002 / EYEB1014
+TFS Trial Form Support, International AB
+BOX 165, 221 00 LUND, SWEDEN
+VAT#: SE556513166001"""
+
 PROTOCOLO = dict(codigo="MK-8748-002", nombre="MALBEC", codigo_cro="EYEB1014", sponsor="Eyebio (MSD)",
                  cro="TFS HealthScience", sitio="312", investigador="Agustina C. Palacio", viatico_usd=D("100"),
-                 derivacion_usd=D("1000"))
+                 derivacion_usd=D("1000"), datos_sitio=DATOS_SITIO, facturar_a=FACTURAR_A)
 
 # nombre, tarifa al médico, precio condicional al sponsor (con overhead)
 PROCEDIMIENTOS = [

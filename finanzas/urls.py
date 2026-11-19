@@ -10,6 +10,9 @@ urlpatterns = [
     path("cobros/", views.cobros, name="cobros"),
     path("cobros/factura/", views.factura_nueva, name="factura_nueva"),
     path("cobros/factura/<int:pk>/cobrada/", views.factura_cobrada, name="factura_cobrada"),
+    path("cobros/factura/<int:pk>/pdf/", views.factura_descargar, name="factura_pdf"),
+    path("cobros/carta/", views.carta_subir, name="carta_subir"),
+    path("cobros/carta/<int:pk>/", views.carta_detalle, name="carta_detalle"),
     path("reparto/", views.reparto, name="reparto"),
     path("reparto/gasto/", views.gasto_nuevo, name="gasto_nuevo"),
 ]

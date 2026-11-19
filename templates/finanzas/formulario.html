@@ -5,7 +5,8 @@
 <div class="panel" style="max-width:560px">
   <form method="post">{% csrf_token %}
     {{ form.as_p }}
-    {% if bna %}<p class="ayuda">La cotización del día está en <a href="https://www.bna.com.ar/Personas" target="_blank" rel="noopener">bna.com.ar</a> (Dólar U.S.A., columna Venta).</p>{% endif %}
+    {% if bna %}{% if cotizacion_bna %}<p class="aviso exito" style="margin-top:-4px">Dólar Banco Nación vendedor (billete){% if cotizacion_bna.1 %} del {{ cotizacion_bna.1 }}{% endif %}: <b>$ {{ cotizacion_bna.0 }}</b>. Ya está puesto en la cotización; si pagás otro día, corregilo.</p>
+    {% else %}<p class="aviso advertencia" style="margin-top:-4px">No pude leer la cotización del Banco Nación: escribila a mano. Está en <a href="https://www.bna.com.ar/Personas" target="_blank" rel="noopener">bna.com.ar</a> (Dólar U.S.A., billetes, columna Venta).</p>{% endif %}{% endif %}
     <button class="boton azul">Guardar</button>
     <a class="boton secundario" href="{% url volver %}">Cancelar</a>
   </form>

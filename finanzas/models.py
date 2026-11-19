@@ -42,6 +42,18 @@ class CartaPago(models.Model):
         return f"{self.periodo} · {self.request_id}"
 
 
+class ItemCarta(models.Model):
+    """Un renglón de la carta de pago, tal como vino en el PDF."""
+    carta = models.ForeignKey(CartaPago, on_delete=models.CASCADE, related_name="items")
+    secuencia = models.CharField(max_length=5, blank=True)
+    codigo_paciente = models.CharField(max_length=30)
+    nombre_visita = models.CharField(max_length=60)
+    monto_usd = models.DecimalField(max_digits=12, decimal_places=2)
+
+    class Meta:
+        ordering = ["id"]
+
+
 class Factura(models.Model):
     protocolo = models.ForeignKey(Protocolo, on_delete=models.PROTECT, related_name="facturas")
     numero = models.CharField("número", max_length=20)

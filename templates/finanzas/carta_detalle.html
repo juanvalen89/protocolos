@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% load formato %}
+{% block contenido %}
+<h1>Carta de pago {{ carta.periodo }}</h1>
+<p class="bajada">Request ID <b>{{ carta.request_id }}</b> · {{ carta.fecha|date:"d/m/Y" }} · {{ carta.monto_usd|usd }}</p>
+{% if not filas %}
+<div class="aviso advertencia">Esta carta se cargó sin el detalle de visitas. <a href="{% url 'carta_subir' %}">Subí su PDF</a> para ver la conciliación.</div>
+{% else %}
+{% if suma != carta.monto_usd %}<div class="aviso error"><b>Los renglones suman {{ suma|usd }}</b> y la carta dice {{ carta.monto_usd|usd }}. Revisá el PDF.</div>{% endif %}
+{% for f in problemas %}<div class="aviso error"><b>{{ f.item.codigo_paciente }} · {{ f.item.nombre_visita }}:</b> {{ f.detalle }}</div>{% endfor %}
+{% if afuera %}<div class="aviso advertencia"><b>{{ afuera|length }} visita{{ afuera|length|pluralize }} hecha{{ afuera|length|pluralize }} en el trimestre de esta carta que la carta no trae:</b>
+  {% for v in afuera %}{{ v.paciente.codigo }} {{ v.tipo.nombre }} ({{ v.fecha|date:"d/m" }}){% if not forloop.last %}, {% endif %}{% endfor %}. Conviene reclamarlas a la CRO o confirmar que vienen en la próxima.</div>{% endif %}
+<div class="panel tabla-ancha">
+<table>
+  <thead><tr><th>Sec.</th><th>Paciente</th><th>Visita</th><th class="num">Importe</th><th>Estado</th><th>Detalle</th></tr></thead>
+  <tbody>
+  {% for f in filas %}<tr><td>{{ f.item.secuencia }}</td><td>{{ f.item.codigo_paciente }}</td><td>{{ f.item.nombre_visita }}</td><td class="num">{{ f.item.monto_usd|usd }}</td>
+    <td>{% if f.estado == "ok" %}<span class="chip ok">Coincide</span>{% elif f.estado == "facturada" %}<span class="chip hecha">Facturada</span>{% elif f.estado == "monto" %}<span class="chip vencida">Importe distinto</span>{% else %}<span class="chip vencida">No está cargada</span>{% endif %}</td>
+    <td>{{ f.detalle }}</td></tr>{% endfor %}
+  <tr class="total"><td colspan="3">Total de la carta</td><td class="num">{{ suma|usd }}</td><td colspan="2"></td></tr>
+  </tbody>
+</table>
+</div>
+<div class="dos">
+  <div class="panel"><h2>Factura de visitas</h2>
+    {% if listas %}<p>{{ listas|length }} visita{{ listas|length|pluralize }} lista{{ listas|length|pluralize }} por <b>{{ total_listas|usd }}</b>, con el Request ID {{ carta.request_id }}.</p>
+    <form method="post">{% csrf_token %}<input type="hidden" name="que" value="visitas"><button class="boton">Generar la factura de visitas</button></form>
+    {% else %}<p class="ayuda">No queda ninguna visita de esta carta por facturar.</p>{% endif %}
+  </div>
+  <div class="panel"><h2>Factura de viáticos</h2>
+    {% if viaticos %}<p>{{ viaticos|length }} viático{{ viaticos|length|pluralize }} de esas visitas por <b>{{ total_viaticos|usd }}</b>.</p>
+    <form method="post">{% csrf_token %}<input type="hidden" name="que" value="viaticos"><button class="boton azul">Generar la factura de viáticos</button></form>
+    {% else %}<p class="ayuda">Los viáticos de estas visitas ya están facturados.</p>{% endif %}
+  </div>
+</div>
+<p class="ayuda">Las facturas se generan con fecha de hoy y vencimiento a 30 días. Los condicionales (OCTA, FAF) se facturan desde “Registrar una factura a mano”.</p>
+{% endif %}
+<a class="boton secundario" href="{% url 'cobros' %}">Volver a cobros</a>
+{% endblock %}

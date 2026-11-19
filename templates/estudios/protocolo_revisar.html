@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% load formato %}
+{% block contenido %}
+<h1>Revisar antes de crear · {{ leido.nombre }}</h1>
+{% if existe %}<div class="aviso error">Ya hay un protocolo con el código {{ leido.codigo }}: no se puede crear de nuevo.</div>{% endif %}
+{% if not leido.codigo %}<div class="aviso error">El presupuesto no trae el número de protocolo (“Protocol #”).</div>{% endif %}
+<div class="tarjetas">
+  <div class="tarjeta"><div class="rotulo">Protocolo</div><div class="cifra" style="font-size:19px">{{ leido.codigo|default:"—" }}</div><div class="detalle">{{ leido.sponsor }} · Sitio {{ leido.sitio }}</div></div>
+  <div class="tarjeta"><div class="rotulo">Visitas</div><div class="cifra">{{ leido.visitas|length }}</div><div class="detalle">Overhead {{ leido.overhead }}</div></div>
+  <div class="tarjeta"><div class="rotulo">Viático por visita</div><div class="cifra">{{ leido.viatico|usd }}</div><div class="detalle">Investigador: {{ leido.investigador }}</div></div>
+</div>
+<div class="panel tabla-ancha"><h2>Visitas y precio que paga el sponsor</h2>
+<table>
+  <thead><tr><th>Visita</th><th class="num">Precio</th><th>Procedimientos que se esperan</th></tr></thead>
+  <tbody>{% for v in leido.visitas %}<tr><td><b>{{ v.nombre }}</b></td><td class="num">{{ v.precio|usd }}</td><td>{{ v.esperados|join:", " }}</td></tr>{% endfor %}</tbody>
+</table>
+</div>
+<div class="dos">
+  <div class="panel"><h2>Condicionales que se cargan</h2>
+    <table><tbody>{% for nombre, precio in leido.condicionales.items %}<tr><td>{{ nombre }}</td><td class="num">{{ precio|usd }}</td></tr>{% empty %}<tr><td>Ninguno.</td></tr>{% endfor %}</tbody></table>
+    <p class="ayuda">Se cobran aparte cuando la coordinadora los carga.</p>
+  </div>
+  <div class="panel"><h2>Del presupuesto que no se carga solo</h2>
+    <table><tbody>
+    {% for x in leido.sin_cargar %}<tr><td>{{ x.descripcion }}</td><td class="num">{{ x.monto|usd }}</td></tr>{% endfor %}
+    {% for x in leido.fijos %}<tr><td>Fijo: {{ x.descripcion }}</td><td class="num">{{ x.monto|usd }}</td></tr>{% endfor %}
+    </tbody></table>
+    <p class="ayuda">Los fijos se facturan como “otro ítem”. Los demás, si corresponden, se agregan en Configuración.</p>
+  </div>
+</div>
+<p class="bajada">{% if base %}Las tarifas de los médicos se copian de {{ base.nombre }}.{% else %}Las tarifas de los médicos arrancan en cero.{% endif %}</p>
+<form method="post" class="barra-acciones">{% csrf_token %}
+  {% if not existe and leido.codigo %}<button class="boton">Crear el protocolo</button>{% endif %}
+  <a class="boton secundario" href="{% url 'protocolo_subir' %}">Subir otro archivo</a>
+</form>
+{% endblock %}

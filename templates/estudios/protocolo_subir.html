@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block contenido %}
+<h1>Protocolo nuevo</h1>
+<p class="bajada">Subí el presupuesto del sitio (el Excel de la CRO, con una columna por visita). El sistema lee las visitas, calcula el precio de cada una con el overhead y te lo muestra para revisar antes de crear nada.</p>
+{% if error %}<div class="aviso error">{{ error }}</div>{% endif %}
+<div class="panel" style="max-width:620px">
+  <form method="post" enctype="multipart/form-data">{% csrf_token %}
+    <p><label for="nombre">Nombre corto del estudio</label><input id="nombre" name="nombre" maxlength="60" required placeholder="Por ejemplo: MALBEC"></p>
+    <p><label for="codigo_cro">Código de la CRO (opcional)</label><input id="codigo_cro" name="codigo_cro" maxlength="40" placeholder="Por ejemplo: EYEB1014"></p>
+    <p><label for="archivo">Presupuesto del sitio (.xlsx)</label><input type="file" id="archivo" name="archivo" accept=".xlsx" required></p>
+    <p><label for="base">Copiar las tarifas de los médicos de</label>
+      <select id="base" name="base"><option value="">No copiar: arrancar con tarifas en cero</option>{% for p in protocolos %}<option value="{{ p.id }}" {% if forloop.first %}selected{% endif %}>{{ p.nombre }}</option>{% endfor %}</select>
+      <span class="ayuda">También copia los datos del sitio y del banco para las facturas. Después se ajusta todo en Configuración.</span></p>
+    <button class="boton">Leer el presupuesto</button>
+  </form>
+</div>
+{% endblock %}

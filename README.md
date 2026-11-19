@@ -29,6 +29,16 @@ y el sistema obliga a cambiarla en el primer ingreso.
   está *sin facturar* hasta que entra en una factura, y *cobrada* cuando la
   factura se marca cobrada. Las cartas de pago trimestrales (payment letters)
   se cargan en Configuración.
+- **Carta de pago**: en Cobros → “Subir carta de pago” se sube el PDF de la
+  CRO. El sistema lee el Request ID, la fecha y cada visita, las compara con lo
+  cargado (coincide, ya facturada, importe distinto, no cargada), avisa qué
+  visitas del trimestre quedaron afuera y genera las facturas de visitas y de
+  viáticos con el Request ID correcto.
+- **Factura en PDF**: cada factura se descarga lista para mandar. Los datos
+  del sitio, de la CRO y del banco se completan una vez por protocolo en
+  Configuración → Protocolos (el CUIT y la cuenta no están en el código).
+- **Cotización**: al registrar un pago se trae el dólar vendedor (billete) del
+  Banco Nación de bna.com.ar; si no responde, se escribe a mano.
 - **Reparto** (regla fija para todos los estudios, sobre lo cobrado):
   neto = cobrado − gastos − pagos a médicos; del neto sale primero el 10% de
   quien trae el estudio y el resto se divide 50 / 40 / 10. A cada uno se le
@@ -38,10 +48,12 @@ y el sistema obliga a cambiarla en el primer ingreso.
 
 ## Sumar otro protocolo
 
-Configuración → Protocolos: cargar el protocolo con sus procedimientos y
-tarifas, y después las visitas del cronograma con el precio del presupuesto y
-los procedimientos esperados. Con más de un protocolo activo aparece un
-selector en el encabezado.
+“+ Protocolo” en el menú: se sube el presupuesto del sitio (el Excel de la CRO
+con una columna por visita). El sistema calcula el precio de cada visita con
+el overhead, el viático y los condicionales, propone los procedimientos de
+cada visita y muestra todo para revisar antes de crear. Las tarifas de los
+médicos se copian de un protocolo existente y se ajustan en Configuración.
+Con más de un protocolo activo aparece un selector en el encabezado.
 
 ## Correr en desarrollo
 

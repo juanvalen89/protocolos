@@ -1,10 +1,12 @@
 from django.urls import path
 
-from . import views
+from . import alta, views
 
 urlpatterns = [
     path("", views.inicio, name="inicio"),
     path("protocolo/", views.cambiar_protocolo, name="cambiar_protocolo"),
+    path("protocolo/nuevo/", alta.protocolo_subir, name="protocolo_subir"),
+    path("protocolo/nuevo/revisar/", alta.protocolo_revisar, name="protocolo_revisar"),
     path("pacientes/", views.pacientes, name="pacientes"),
     path("pacientes/nuevo/", views.paciente_form, name="paciente_nuevo"),
     path("pacientes/<int:pk>/", views.paciente_form, name="paciente_editar"),
