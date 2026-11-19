@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% load static %}
+{% block titulo %}Ingresar · Centro de Ojos Loria{% endblock %}
+{% block contenido %}
+<div style="max-width:420px;margin:48px auto">
+  <div style="background:#fff;padding:26px 24px 18px;border:1px solid var(--borde);border-bottom:4px solid var(--azul);border-radius:var(--radio) var(--radio) 0 0;text-align:center">
+    <img src="{% static 'marca/logo-loria.png' %}" alt="Loria · Centro de Ojos" style="height:86px;width:auto">
+    <div style="font-family:var(--f-etiqueta);font-size:13px;letter-spacing:1.6px;text-transform:uppercase;color:var(--gris);margin-top:10px">Protocolos de investigación</div>
+  </div>
+  <div class="panel" style="border-top:0;border-radius:0 0 var(--radio) var(--radio)">
+    <p style="color:var(--gris);margin-top:0">Ingresá con tu usuario y contraseña.</p>
+    {% if form.errors %}<div class="aviso error">Usuario o contraseña incorrectos.</div>{% endif %}
+    <form method="post">
+      {% csrf_token %}
+      <p><label for="id_username">Usuario</label>{{ form.username }}</p>
+      <p><label for="id_password">Contraseña</label>{{ form.password }}</p>
+      <button class="boton azul" style="width:100%">Ingresar</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

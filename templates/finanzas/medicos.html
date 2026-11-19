@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% load formato %}
+{% block contenido %}
+<h1>Médicos</h1>
+<p class="bajada">Lo que le corresponde a cada médico sale solo de la carga de la coordinadora. El saldo es eso menos lo ya pagado.</p>
+<div class="barra-acciones"><a class="boton" href="{% url 'pago_nuevo' %}">Registrar un pago</a></div>
+<div class="panel tabla-ancha"><h2>Saldo por médico</h2>
+<table>
+  <thead><tr><th>Médico</th><th class="num">Le corresponde</th><th class="num">Pagado</th><th class="num">Saldo</th><th></th></tr></thead>
+  <tbody>
+  {% for s in saldos %}
+  <tr><td><a href="{% url 'medico_detalle' s.medico.id %}"><b>{{ s.medico.nombre }}</b></a></td>
+    <td class="num">{{ s.devengado|usd }}</td><td class="num">{{ s.pagado|usd }}</td>
+    <td class="num"><b>{{ s.saldo|usd }}</b></td>
+    <td>{% if s.saldo > 0 %}<a class="boton azul chico" href="{% url 'pago_nuevo' %}?medico={{ s.medico.id }}&monto={{ s.saldo|stringformat:'s' }}">Pagar</a>{% elif s.saldo < 0 %}<span class="chip pendiente">Pagado de más</span>{% else %}<span class="chip ok">Al día</span>{% endif %}</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+
+<div class="panel tabla-ancha"><h2>Liquidación por mes</h2>
+{% for m in meses %}
+<h3 style="margin:14px 0 4px;font-size:15px;color:var(--azul)">{{ m.mes|mes|capfirst }} {{ m.anio }} · {{ m.total|usd }}</h3>
+<table>
+  <thead><tr><th>Médico</th><th>Detalle por visita</th><th class="num">Total</th></tr></thead>
+  <tbody>
+  {% for f in m.filas %}<tr><td>{{ f.medico.nombre }}</td>
+    <td>{% for visita, importe in f.por_visita.items %}{{ visita }} {{ importe|usd }}{% if not forloop.last %} · {% endif %}{% endfor %}</td>
+    <td class="num">{{ f.total|usd }}</td></tr>{% endfor %}
+  </tbody>
+</table>
+{% endfor %}
+</div>
+
+<div class="panel tabla-ancha"><h2>Pagos registrados</h2>
+<table>
+  <thead><tr><th>Médico</th><th>Período</th><th>Fecha</th><th class="num">USD</th><th class="num">Cotización</th><th class="num">Pesos</th><th>Lo pagó</th></tr></thead>
+  <tbody>
+  {% for p in pagos %}<tr><td>{{ p.medico.nombre }}</td><td>{{ p.periodo }}</td><td>{{ p.fecha|date:"d/m/Y"|default:"—" }}</td>
+    <td class="num">{{ p.monto_usd|usd }}</td><td class="num">{{ p.cotizacion|default:"—" }}</td><td class="num">{{ p.monto_ars|pesos|default:"—" }}</td><td>{{ p.pagado_por.nombre }}</td></tr>
+  {% empty %}<tr><td colspan="7">Todavía no hay pagos registrados.</td></tr>{% endfor %}
+  </tbody>
+</table>
+</div>
+{% endblock %}

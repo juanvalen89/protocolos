@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% load formato %}
+{% block contenido %}
+<h1>Tablero · {{ protocolo.nombre|default:"sin protocolo" }}</h1>
+{% if not protocolo %}<div class="panel">Todavía no hay ningún protocolo cargado.</div>{% else %}
+<div class="tarjetas">
+  <a class="tarjeta ok" href="{% url 'cobros' %}"><div class="rotulo">Cobrado al sponsor</div><div class="cifra">{{ facturas.cobrado|usd }}</div><div class="detalle">Facturas ya pagadas</div></a>
+  <a class="tarjeta {% if facturas.vencidas %}mal{% else %}alerta{% endif %}" href="{% url 'cobros' %}"><div class="rotulo">Facturado sin cobrar</div><div class="cifra">{{ facturas.por_cobrar|usd }}</div><div class="detalle">{% if facturas.vencidas %}{{ facturas.vencido|usd }} ya vencido{% else %}Nada vencido{% endif %}</div></a>
+  <a class="tarjeta" href="{% url 'cobros' %}#sin-facturar"><div class="rotulo">Realizado sin facturar</div><div class="cifra">{{ pendientes.total|usd }}</div><div class="detalle">Espera la próxima carta de pago</div></a>
+  <a class="tarjeta {% if saldo_medicos %}alerta{% else %}ok{% endif %}" href="{% url 'medicos' %}"><div class="rotulo">A pagar a médicos</div><div class="cifra">{{ saldo_medicos|usd }}</div><div class="detalle">{{ medicos_con_saldo|length }} médico{{ medicos_con_saldo|length|pluralize }} con saldo</div></a>
+</div>
+
+{% if facturas.vencidas or mal_request or atrasadas %}
+<div class="panel"><h2>Para atender</h2>
+  {% for f in facturas.vencidas %}<div class="aviso error"><b>Factura {{ f.numero }} vencida</b> el {{ f.vencimiento|date:"d/m/Y" }}: {{ f.total|usd }} sin cobrar.</div>{% endfor %}
+  {% for f in mal_request %}<div class="aviso advertencia"><b>Factura {{ f.numero }}:</b> lleva el Request ID {{ f.request_id }}, pero la carta {{ f.carta.periodo }} es {{ f.carta.request_id }}. La CRO puede rechazarla.</div>{% endfor %}
+  {% if atrasadas %}<div class="aviso advertencia"><b>{{ atrasadas|length }} visita{{ atrasadas|length|pluralize }} del cronograma sin cargar</b> ({{ monto_atrasadas|usd }} que no se cobran hasta que se carguen):
+    {% for a in atrasadas %}{{ a.paciente.codigo }} {{ a.tipo.nombre }} ({{ a.esperada|date:"d/m" }}){% if not forloop.last %}, {% endif %}{% endfor %}.</div>{% endif %}
+</div>
+{% endif %}
+
+<div class="dos">
+  <div class="panel"><h2>Sin facturar todavía</h2>
+    <table>
+      <tr><td>Visitas ({{ pendientes.visitas|length }})</td><td class="num">{{ pendientes.total_visitas|usd }}</td></tr>
+      <tr><td>Viáticos ({{ pendientes.viaticos|length }})</td><td class="num">{{ pendientes.total_viaticos|usd }}</td></tr>
+      <tr><td>Condicionales: OCTA, FAF ({{ pendientes.condicionales|length }})</td><td class="num">{{ pendientes.total_condicionales|usd }}</td></tr>
+      <tr class="total"><td>Total</td><td class="num">{{ pendientes.total|usd }}</td></tr>
+    </table>
+  </div>
+  <div class="panel"><h2>Reparto sobre lo cobrado</h2>
+    <table>
+      {% for f in reparto.filas %}<tr><td>{{ f.socio.nombre }}{% if f.socio.es_comision %} (comisión){% endif %}</td><td class="num">{{ f.total|usd }}</td></tr>{% endfor %}
+      <tr class="total"><td>Cobrado</td><td class="num">{{ reparto.cobrado|usd }}</td></tr>
+    </table>
+    <p class="ayuda"><a href="{% url 'reparto' %}">Ver la cuenta completa</a></p>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

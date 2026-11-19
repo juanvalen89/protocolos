@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% load formato %}
+{% block contenido %}
+<h1>Registrar una factura</h1>
+<p class="bajada">Tildá lo que entra en esta factura. Si corresponde a una carta de pago, elegila y el Request ID se copia solo.</p>
+{% if error %}<div class="aviso error">{{ error }}</div>{% endif %}
+<form method="post">{% csrf_token %}
+<div class="panel">
+  <div class="dos">
+    <p><label for="numero">Número</label><input id="numero" name="numero" value="{{ post.numero }}" required></p>
+    <p><label for="carta">Carta de pago</label><select id="carta" name="carta"><option value="">Sin carta</option>{% for c in cartas %}<option value="{{ c.id }}" {% if post.carta == c.id|stringformat:"s" %}selected{% endif %}>{{ c.periodo }} · {{ c.request_id }}</option>{% endfor %}</select></p>
+    <p><label for="fecha">Fecha</label><input type="date" id="fecha" name="fecha" value="{{ post.fecha|default:hoy }}" required></p>
+    <p><label for="vencimiento">Vencimiento</label><input type="date" id="vencimiento" name="vencimiento" value="{{ post.vencimiento }}" required></p>
+  </div>
+</div>
+<div class="panel tabla-ancha"><h2>Visitas</h2>
+<table><tbody>
+  {% for x in pendientes.visitas %}<tr><td style="width:32px"><input type="checkbox" id="v{{ x.visita.id }}" name="item" value="v:{{ x.visita.id }}" data-monto="{{ x.monto|stringformat:'s' }}" {% if 'v:'|add:x.visita.id|stringformat:'s' in marcados %}checked{% endif %}></td>
+    <td><label for="v{{ x.visita.id }}" style="text-transform:none;letter-spacing:0;font:400 15px var(--f-texto);color:var(--tinta)">{{ x.visita.paciente.codigo }} · {{ x.visita.tipo.nombre }} · {{ x.visita.fecha|date:"d/m/Y" }}</label></td><td class="num">{{ x.monto|usd }}</td></tr>
+  {% empty %}<tr><td>No hay visitas sin facturar.</td></tr>{% endfor %}
+</tbody></table>
+</div>
+<div class="panel tabla-ancha"><h2>Viáticos y condicionales</h2>
+<table><tbody>
+  {% for x in pendientes.viaticos %}<tr><td style="width:32px"><input type="checkbox" id="t{{ x.visita.id }}" name="item" value="t:{{ x.visita.id }}" data-monto="{{ x.monto|stringformat:'s' }}"></td>
+    <td><label for="t{{ x.visita.id }}" style="text-transform:none;letter-spacing:0;font:400 15px var(--f-texto);color:var(--tinta)">Viático · {{ x.visita.paciente.codigo }} · {{ x.visita.tipo.nombre }}</label></td><td class="num">{{ x.monto|usd }}</td></tr>{% endfor %}
+  {% for x in pendientes.condicionales %}<tr><td style="width:32px"><input type="checkbox" id="c{{ x.realizacion.id }}" name="item" value="c:{{ x.realizacion.id }}" data-monto="{{ x.monto|stringformat:'s' }}"></td>
+    <td><label for="c{{ x.realizacion.id }}" style="text-transform:none;letter-spacing:0;font:400 15px var(--f-texto);color:var(--tinta)">{{ x.realizacion.procedimiento.nombre }} · {{ x.realizacion.visita.paciente.codigo }} · {{ x.realizacion.visita.tipo.nombre }}</label></td><td class="num">{{ x.monto|usd }}</td></tr>{% endfor %}
+</tbody></table>
+</div>
+<div class="panel"><h2>Otro ítem (cierre, archivo u otro fijo)</h2>
+  <div class="dos">
+    <p><label for="extra_descripcion">Descripción</label><input id="extra_descripcion" name="extra_descripcion" value="{{ post.extra_descripcion }}"></p>
+    <p><label for="extra_monto">Importe en USD</label><input id="extra_monto" name="extra_monto" inputmode="decimal" value="{{ post.extra_monto }}"></p>
+  </div>
+</div>
+<div class="barra-acciones">
+  <button class="boton">Registrar factura</button>
+  <a class="boton secundario" href="{% url 'cobros' %}">Cancelar</a>
+  <b id="total-elegido" style="font-size:18px;color:var(--azul-oscuro);font-variant-numeric:tabular-nums"></b>
+</div>
+</form>
+<script>
+function sumar() {
+  let t = 0;
+  document.querySelectorAll('input[name=item]:checked').forEach(c => { t += parseFloat(c.dataset.monto); });
+  const extra = parseFloat((document.getElementById('extra_monto').value || '0').replace(',', '.'));
+  if (!isNaN(extra)) t += extra;
+  document.getElementById('total-elegido').textContent = 'Total: USD ' + t.toLocaleString('es-AR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+}
+document.addEventListener('change', sumar); document.addEventListener('input', sumar); sumar();
+</script>
+{% endblock %}

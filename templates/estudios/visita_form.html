@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block contenido %}
+<h1>{{ tipo.nombre }} · {{ paciente.codigo }}</h1>
+<p class="bajada">Poné la fecha y, en cada procedimiento que se hizo, quién lo hizo. Lo que no se hizo queda en “No se hizo”.</p>
+{% if error %}<div class="aviso error">{{ error }}</div>{% endif %}
+<form method="post">{% csrf_token %}
+<div class="panel" style="max-width:720px">
+  <div class="dos">
+    <p><label for="fecha">Fecha de la visita</label><input type="date" id="fecha" name="fecha" value="{{ fecha }}" required></p>
+    <p><label for="todos">Completar los vacíos con</label>
+      <select id="todos"><option value="">Elegir médico…</option>{% for m in medicos %}<option value="{{ m.id }}">{{ m.nombre }}</option>{% endfor %}</select>
+      <span class="ayuda">Atajo: llena los procedimientos de arriba que estén sin médico.</span></p>
+  </div>
+  <table>
+    <thead><tr><th>Procedimiento</th><th style="width:55%">Quién lo hizo</th></tr></thead>
+    <tbody id="esperados">
+    {% for f in esperados %}{% include "estudios/_fila_procedimiento.html" %}{% endfor %}
+    </tbody>
+  </table>
+  {% if otros %}
+  <details style="margin-top:14px"><summary style="cursor:pointer;color:var(--azul);font-weight:500">Se hizo algo más (otros procedimientos)</summary>
+    <table style="margin-top:8px"><tbody>
+    {% for f in otros %}{% include "estudios/_fila_procedimiento.html" %}{% endfor %}
+    </tbody></table>
+  </details>
+  {% endif %}
+  <p style="margin-top:18px"><label for="nota">Nota (opcional)</label><input id="nota" name="nota" maxlength="200" value="{{ nota|default:'' }}"></p>
+  <p><label for="parcial" style="text-transform:none;letter-spacing:0;font:400 15px var(--f-texto);color:var(--tinta)">
+    <input type="checkbox" id="parcial" name="parcial" value="1" {% if parcial %}checked{% endif %}>
+    Es una repetición parcial de una visita ya hecha (por ejemplo, repetir una extracción)</label></p>
+  <button class="boton">Guardar visita</button>
+  <a class="boton secundario" href="{% url 'pacientes' %}">Cancelar</a>
+</div>
+</form>
+<script>
+document.getElementById("todos").addEventListener("change", function () {
+  if (!this.value) return;
+  document.querySelectorAll("#esperados select").forEach(s => { if (!s.value) s.value = this.value; });
+  this.value = "";
+});
+</script>
+{% endblock %}

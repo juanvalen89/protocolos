@@ -1,0 +1,140 @@
+{% load static %}<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block titulo %}Protocolos · Centro de Ojos Loria{% endblock %}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Condensed:wght@500;600&display=swap">
+<style>
+:root{
+  /* Estética de centrodeojosloria.com: azul pizarra #446084, celeste del logo, rojo de acción #b20000, Roboto.
+     Encabezado blanco con el logo, barra de navegación azul, contenido sobre gris azulado muy claro. */
+  --azul:#446084; --azul-oscuro:#334862; --celeste:#55a3bf; --celeste-claro:#e6f1f6; --rojo:#b20000;
+  --fondo:#f3f5f8; --panel:#ffffff; --borde:#d9e0e8; --tinta:#1f2a37; --gris:#667487;
+  --ok:#2e7d46; --ok-f:#e4f3e9; --alerta:#8a6100; --alerta-f:#fdf3dc; --mal:#b20000; --mal-f:#fbe9e7;
+  --f-texto:"Roboto",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-etiqueta:"Roboto Condensed","Roboto",system-ui,sans-serif;
+  --radio:5px;
+}
+*{box-sizing:border-box}
+body{margin:0;font:15.5px/1.5 var(--f-texto);background:var(--fondo);color:var(--tinta)}
+.cinta{background:#111;color:#f1f1f1;font-size:13px;padding:5px 24px;display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.cinta .hueco{flex:1}
+.cinta a{color:#f1f1f1;text-decoration:none}
+.cinta form{display:inline-flex;gap:8px;align-items:center;margin:0}
+.cinta select{width:auto;padding:2px 6px;font-size:13px;border:1px solid #555;background:#222;color:#fff}
+.cinta button{background:none;border:1px solid #666;color:#f1f1f1;border-radius:var(--radio);padding:2px 10px;cursor:pointer;font:500 12.5px var(--f-etiqueta);letter-spacing:.6px;text-transform:uppercase}
+header{background:#fff;padding:10px 24px;display:flex;align-items:center;gap:28px;flex-wrap:wrap;border-bottom:1px solid var(--borde)}
+header .marca img{height:58px;width:auto;display:block}
+header .estudio{font-family:var(--f-etiqueta);font-size:13px;letter-spacing:1.4px;text-transform:uppercase;color:var(--gris);border-left:1px solid var(--borde);padding-left:20px}
+header .estudio b{display:block;font-size:19px;letter-spacing:.5px;color:var(--azul-oscuro)}
+nav.principal{background:var(--azul);padding:0 24px;display:flex;gap:2px;flex-wrap:wrap}
+nav.principal a{color:#e3ebf3;text-decoration:none;padding:11px 14px;font:500 14.5px var(--f-etiqueta);letter-spacing:.8px;text-transform:uppercase;border-bottom:3px solid transparent}
+nav.principal a:hover{background:var(--azul-oscuro);color:#fff}
+nav.principal a.activo{color:#fff;border-bottom-color:var(--celeste);background:var(--azul-oscuro)}
+nav.principal .separador{flex:1}
+main{max-width:1120px;margin:26px auto;padding:0 20px}
+h1{font-weight:700;font-size:24px;color:var(--azul-oscuro);margin:.2em 0 .6em;text-wrap:balance}
+h2{font-weight:700;font-size:16.5px;margin:0 0 .6em;color:var(--azul-oscuro)}
+.bajada{color:var(--gris);margin:-8px 0 18px;max-width:70ch}
+.panel{background:var(--panel);border:1px solid var(--borde);border-radius:var(--radio);padding:18px 20px;margin-bottom:18px}
+.tabla-ancha{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:14.5px}
+th{color:var(--gris);text-align:left;font:600 12.5px var(--f-etiqueta);letter-spacing:.8px;text-transform:uppercase;border-bottom:2px solid var(--azul);padding:7px 10px;white-space:nowrap}
+td{border-bottom:1px solid var(--borde);padding:9px 10px;vertical-align:top}
+tr:last-child td{border-bottom:0}
+tr.total td{border-top:2px solid var(--azul);font-weight:700;border-bottom:0}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+a{color:var(--azul)}
+.boton,button.boton{display:inline-block;background:var(--rojo);color:#fff;border:0;border-radius:var(--radio);padding:10px 20px;font:600 14.5px var(--f-etiqueta);letter-spacing:1px;text-transform:uppercase;text-decoration:none;cursor:pointer}
+.boton:hover{background:#8f0000}
+.boton.azul{background:var(--azul)}.boton.azul:hover{background:var(--azul-oscuro)}
+.boton.secundario{background:#fff;color:var(--azul-oscuro);border:1.5px solid var(--azul)}
+.boton.secundario:hover{background:var(--celeste-claro)}
+.boton.chico{padding:5px 12px;font-size:13px}
+.barra-acciones{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
+.chip{display:inline-block;padding:3px 10px;border-radius:999px;font:600 12.5px var(--f-etiqueta);letter-spacing:.5px;text-transform:uppercase;line-height:1.4;text-decoration:none;white-space:nowrap;border:1px solid transparent}
+.chip.hecha{background:var(--celeste-claro);color:var(--azul-oscuro);border-color:#c5dde8}
+a.chip.hecha:hover{border-color:var(--celeste)}
+.chip.proxima{background:#fff;color:var(--gris);border:1px dashed #a9b4c1}
+.chip.atrasada,.chip.vencida,.chip.falla{background:var(--mal-f);color:var(--mal)}
+.chip.activo,.chip.cobrada,.chip.ok{background:var(--ok-f);color:var(--ok)}
+.chip.screening,.chip.pendiente{background:var(--alerta-f);color:var(--alerta)}
+.chip.finalizado{background:#eceff3;color:var(--gris)}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.aviso{border-radius:var(--radio);padding:12px 16px;margin:0 0 14px;font-size:14.5px;border-left:4px solid currentColor}
+.aviso.exito{background:var(--ok-f);color:var(--ok)}
+.aviso.error{background:var(--mal-f);color:var(--mal)}
+.aviso.advertencia{background:var(--alerta-f);color:var(--alerta)}
+.aviso b{color:inherit}
+form p{margin:0 0 14px}
+label{display:block;font:600 13.5px var(--f-etiqueta);letter-spacing:.6px;text-transform:uppercase;margin-bottom:4px;color:var(--azul-oscuro)}
+input,select,textarea{width:100%;padding:9px 12px;border:1.5px solid var(--borde);border-radius:var(--radio);font:inherit;background:#fff;color:var(--tinta)}
+input[type=checkbox]{width:18px;height:18px;padding:0;vertical-align:middle;accent-color:var(--azul)}
+input:focus,select:focus,textarea:focus,a:focus-visible,button:focus-visible{outline:2px solid var(--celeste);outline-offset:1px;border-color:var(--celeste)}
+.ayuda,.helptext{color:var(--gris);font-size:13px;margin-top:3px;display:block}
+.errorlist{color:var(--mal);font-size:13px;margin:4px 0 0;padding-left:18px}
+.tarjetas{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:14px;margin-bottom:18px}
+.tarjeta{background:#fff;border:1px solid var(--borde);border-top:4px solid var(--azul);border-radius:var(--radio);padding:14px 16px;text-decoration:none;color:inherit;display:block}
+a.tarjeta:hover{background:var(--celeste-claro)}
+.tarjeta.ok{border-top-color:var(--ok)}.tarjeta.alerta{border-top-color:#d39a00}.tarjeta.mal{border-top-color:var(--rojo)}
+.tarjeta .rotulo{font:600 12.5px var(--f-etiqueta);letter-spacing:.9px;text-transform:uppercase;color:var(--gris)}
+.tarjeta .cifra{font-size:25px;font-weight:700;color:var(--azul-oscuro);font-variant-numeric:tabular-nums;margin:2px 0;white-space:nowrap}
+.tarjeta .detalle{font-size:13.5px;color:var(--gris)}
+.dos{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.dos>*{min-width:0}
+@media (max-width:780px){.dos{grid-template-columns:1fr}header,nav.principal,.cinta{padding-left:16px;padding-right:16px}header .marca img{height:44px}}
+</style>
+{% block estilos %}{% endblock %}
+</head>
+<body>
+{% if user.is_authenticated %}
+<div class="cinta">
+  <span>Protocolos de investigación</span>
+  {% if protocolos_activos|length > 1 %}
+  <form method="post" action="{% url 'cambiar_protocolo' %}">{% csrf_token %}
+    <label for="selector-protocolo" style="display:inline;margin:0;color:#bbb;font-size:12px">Estudio</label>
+    <select id="selector-protocolo" name="protocolo" onchange="this.form.submit()">
+      {% for p in protocolos_activos %}<option value="{{ p.id }}" {% if p.id == protocolo_actual.id %}selected{% endif %}>{{ p.nombre }}</option>{% endfor %}
+    </select>
+  </form>
+  {% endif %}
+  <span class="hueco"></span>
+  <a href="{% url 'password_change' %}" title="Cambiar mi contraseña">{{ user.get_full_name|default:user.username }} · {{ user.get_rol_display }}</a>
+  <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button>Salir</button></form>
+</div>
+<header>
+  <a class="marca" href="{% url 'inicio' %}" title="Inicio"><img src="{% static 'marca/logo-loria.png' %}" alt="Loria · Centro de Ojos"></a>
+  {% if protocolo_actual %}<div class="estudio">Estudio<b>{{ protocolo_actual.nombre }}</b>{{ protocolo_actual.codigo }} · Sitio {{ protocolo_actual.sitio }}</div>{% endif %}
+</header>
+<nav class="principal">
+  {% with r=request.resolver_match.url_name %}
+  {% if user.ve_numeros %}<a href="{% url 'tablero' %}" {% if r == 'tablero' %}class="activo"{% endif %}>Tablero</a>{% endif %}
+  <a href="{% url 'pacientes' %}" {% if r == 'pacientes' or r == 'elegir_visita' or 'visita' in r or 'paciente' in r %}class="activo"{% endif %}>Pacientes y visitas</a>
+  {% if user.ve_numeros %}
+  <a href="{% url 'medicos' %}" {% if r == 'medicos' or r == 'medico_detalle' or r == 'pago_nuevo' %}class="activo"{% endif %}>Médicos</a>
+  <a href="{% url 'cobros' %}" {% if r == 'cobros' or r == 'factura_nueva' %}class="activo"{% endif %}>Cobros al sponsor</a>
+  <a href="{% url 'reparto' %}" {% if r == 'reparto' or r == 'gasto_nuevo' %}class="activo"{% endif %}>Reparto</a>
+  <span class="separador"></span>
+  <a href="/administracion/">Configuración</a>
+  {% endif %}
+  {% endwith %}
+</nav>
+{% endif %}
+<main>
+{% if messages %}{% for m in messages %}
+  <div class="aviso {% if m.tags == 'success' %}exito{% elif m.tags == 'error' %}error{% elif m.tags == 'warning' %}advertencia{% endif %}">{{ m }}</div>
+{% endfor %}{% endif %}
+{% block contenido %}{% endblock %}
+</main>
+<script>
+// Evita el doble envío por un doble clic.
+document.addEventListener("submit", function (e) {
+  const botones = e.target.querySelectorAll("button:not([type=button])");
+  setTimeout(() => botones.forEach(b => { b.disabled = true; }), 0);
+});
+</script>
+</body>
+</html>

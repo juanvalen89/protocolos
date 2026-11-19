@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block titulo %}Sin permiso{% endblock %}
+{% block contenido %}
+<h1>Tu usuario no puede ver esto</h1>
+<div class="panel" style="max-width:640px">
+  {% if exception %}<p style="margin-top:0"><b>{{ exception }}</b></p>{% endif %}
+  <p style="color:var(--gris)">La coordinación carga pacientes, visitas y quién hizo cada procedimiento.
+  Los pagos, los cobros y el reparto los ve solo Dirección.</p>
+  <a class="boton" href="{% url 'inicio' %}">Volver al inicio</a>
+</div>
+{% endblock %}

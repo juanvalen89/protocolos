@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block contenido %}
+<h1>{% if paciente.pk %}Paciente {{ paciente.codigo }}{% else %}Paciente nuevo{% endif %}</h1>
+<div class="panel" style="max-width:560px">
+  <form method="post">{% csrf_token %}
+    {{ form.as_p }}
+    <button class="boton azul">Guardar</button>
+    <a class="boton secundario" href="{% url 'pacientes' %}">Cancelar</a>
+  </form>
+</div>
+{% endblock %}

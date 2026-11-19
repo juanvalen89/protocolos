@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block titulo %}Cambiar contraseña{% endblock %}
+{% block contenido %}
+<h1>Cambiar mi contraseña</h1>
+<div class="panel" style="max-width:520px">
+  <p class="ayuda" style="margin-top:0">Mínimo 10 caracteres, que no sea una contraseña común ni parecida a tu usuario.</p>
+  <form method="post">
+    {% csrf_token %}
+    {% for campo in form %}
+    <p><label>{{ campo.label }}</label>{{ campo }}
+    {% if campo.errors %}<ul class="errorlist">{% for e in campo.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}</p>
+    {% endfor %}
+    <button class="boton azul">Guardar contraseña</button>
+    <a class="boton secundario" href="{% url 'inicio' %}">Cancelar</a>
+  </form>
+</div>
+{% endblock %}

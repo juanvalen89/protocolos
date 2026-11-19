@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% load formato %}
+{% block contenido %}
+<h1>Reparto · {{ protocolo.nombre }}</h1>
+<p class="bajada">Se reparte sobre lo cobrado. Del neto sale primero la comisión de quien trae el estudio; el resto se divide por porcentaje, y a cada uno se le devuelve lo que adelantó.</p>
+<div class="panel tabla-ancha" style="max-width:640px">
+<table>
+  <tr><td>Cobrado al sponsor</td><td class="num">{{ reparto.cobrado|usd }}</td></tr>
+  <tr><td>Gastos y pagos a médicos</td><td class="num">− {{ reparto.egresos|usd }}</td></tr>
+  <tr class="total"><td>Neto</td><td class="num">{{ reparto.neto|usd }}</td></tr>
+  <tr><td>Comisión</td><td class="num">− {{ reparto.comision|usd }}</td></tr>
+  <tr class="total"><td>A dividir</td><td class="num">{{ reparto.a_dividir|usd }}</td></tr>
+</table>
+</div>
+<div class="panel tabla-ancha">
+<table>
+  <thead><tr><th>Quién</th><th class="num">%</th><th class="num">Su parte</th><th class="num">Lo que adelantó</th><th class="num">Le corresponde</th></tr></thead>
+  <tbody>
+  {% for f in reparto.filas %}<tr><td><b>{{ f.socio.nombre }}</b>{% if f.socio.es_comision %} · comisión sobre el neto{% endif %}</td><td class="num">{{ f.socio.porcentaje|floatformat:"-2" }}</td><td class="num">{{ f.parte|usd }}</td><td class="num">{{ f.adelantado|usd }}</td><td class="num"><b>{{ f.total|usd }}</b></td></tr>{% endfor %}
+  </tbody>
+</table>
+</div>
+<div class="barra-acciones"><a class="boton" href="{% url 'gasto_nuevo' %}">Registrar un gasto</a></div>
+<div class="panel tabla-ancha"><h2>Gastos y pagos descontados</h2>
+<table>
+  <thead><tr><th>Concepto</th><th>Fecha</th><th>Lo pagó</th><th class="num">USD</th></tr></thead>
+  <tbody>
+  {% for g in gastos %}<tr><td>{{ g.concepto }}</td><td>{{ g.fecha|date:"d/m/Y"|default:"—" }}</td><td>{{ g.pagado_por.nombre }}</td><td class="num">{{ g.monto_usd|usd }}</td></tr>{% endfor %}
+  {% for p in pagos %}<tr><td>Pago a {{ p.medico.nombre }} · {{ p.periodo }}</td><td>{{ p.fecha|date:"d/m/Y"|default:"—" }}</td><td>{{ p.pagado_por.nombre }}</td><td class="num">{{ p.monto_usd|usd }}</td></tr>{% endfor %}
+  <tr class="total"><td colspan="3">Total</td><td class="num">{{ reparto.egresos|usd }}</td></tr>
+  </tbody>
+</table>
+</div>
+{% endblock %}

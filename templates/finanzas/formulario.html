@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block contenido %}
+<h1>{{ titulo }}</h1>
+{% if ayuda %}<p class="bajada">{{ ayuda }}</p>{% endif %}
+<div class="panel" style="max-width:560px">
+  <form method="post">{% csrf_token %}
+    {{ form.as_p }}
+    {% if bna %}<p class="ayuda">La cotización del día está en <a href="https://www.bna.com.ar/Personas" target="_blank" rel="noopener">bna.com.ar</a> (Dólar U.S.A., columna Venta).</p>{% endif %}
+    <button class="boton azul">Guardar</button>
+    <a class="boton secundario" href="{% url volver %}">Cancelar</a>
+  </form>
+</div>
+{% endblock %}

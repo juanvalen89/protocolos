@@ -1,0 +1,2 @@
+<tr><td><label for="medico_{{ f.proc.id }}" style="text-transform:none;letter-spacing:0;font:500 15px var(--f-texto);color:var(--tinta);margin:6px 0 0">{{ f.proc.nombre }}</label></td>
+<td><select id="medico_{{ f.proc.id }}" name="medico_{{ f.proc.id }}"><option value="">No se hizo</option>{% for m in medicos %}<option value="{{ m.id }}" {% if f.elegido == m.id|stringformat:"s" %}selected{% endif %}>{{ m.nombre }}</option>{% endfor %}</select></td></tr>

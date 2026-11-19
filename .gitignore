@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+staticfiles/
+.coverage
+htmlcov/
+desarrollo.sqlite3

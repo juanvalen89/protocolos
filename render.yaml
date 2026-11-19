@@ -1,0 +1,29 @@
+# Blueprint de Render: crea la app y la base.
+# En render.com: New → Blueprint → apuntar al repositorio con este archivo.
+services:
+  - type: web
+    name: protocolos-loria
+    runtime: python
+    plan: starter
+    buildCommand: "./build.sh"
+    startCommand: "gunicorn config.wsgi:application"
+    envVars:
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: DJANGO_DEBUG
+        value: "0"
+      - key: DJANGO_ALLOWED_HOSTS
+        value: "protocolos-loria.onrender.com"   # cambiar si se usa dominio propio
+      - key: PYTHON_VERSION
+        value: "3.13.1"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: protocolos-loria-db
+          property: connectionString
+      - key: WEB_CONCURRENCY
+        value: "2"
+
+databases:
+  - name: protocolos-loria-db
+    plan: basic-256mb
+    postgresMajorVersion: "16"

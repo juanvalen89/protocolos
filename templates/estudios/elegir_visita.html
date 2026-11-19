@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block contenido %}
+<h1>¿Qué visita se hizo? · {{ paciente.codigo }}</h1>
+<p class="bajada">Elegí la visita del cronograma. Las que ya están cargadas figuran tildadas.</p>
+<div class="panel"><div class="chips">
+  {% for t in tipos %}
+  <a class="chip {% if t.hecha %}hecha{% else %}proxima{% endif %}" style="font-size:14px;padding:7px 14px" href="{% url 'visita_nueva' paciente.id t.tipo.id %}">{% if t.hecha %}✓ {% endif %}{{ t.tipo.nombre }}</a>
+  {% endfor %}
+</div></div>
+<a class="boton secundario" href="{% url 'pacientes' %}">Volver</a>
+{% endblock %}

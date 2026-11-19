@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block contenido %}
+<h1>Pacientes y visitas</h1>
+{% if not protocolo %}
+<div class="panel">Todavía no hay ningún protocolo cargado.</div>
+{% else %}
+<p class="bajada">Cada visita cargada figura con su fecha. Tocá una para corregirla, o cargá la que sigue.</p>
+{% if atrasadas %}<div class="aviso advertencia"><b>{{ atrasadas }} visita{{ atrasadas|pluralize }} del cronograma sin cargar.</b> Están marcadas en rojo en cada paciente: si se hicieron, falta cargarlas.</div>{% endif %}
+<div class="barra-acciones"><a class="boton" href="{% url 'paciente_nuevo' %}">+ Paciente nuevo</a></div>
+<div class="panel tabla-ancha">
+<table>
+  <thead><tr><th>Paciente</th><th>Estado</th><th>Visitas</th><th></th></tr></thead>
+  <tbody>
+  {% for f in filas %}
+  <tr>
+    <td><a href="{% url 'paciente_editar' f.paciente.id %}"><b>{{ f.paciente.codigo }}</b></a>
+      {% if f.paciente.nota %}<span class="ayuda">{{ f.paciente.nota }}</span>{% endif %}</td>
+    <td><span class="chip {{ f.paciente.estado }}">{{ f.paciente.get_estado_display }}</span></td>
+    <td><div class="chips">
+      {% for v in f.visitas %}<a class="chip hecha" href="{% url 'visita_editar' v.id %}" title="Ver o corregir">{{ v.tipo.nombre }}{% if not v.completa %} (parcial){% endif %} · {{ v.fecha|date:"d/m" }}</a>{% endfor %}
+      {% for tipo, esperada, atrasada in f.esperadas %}<a class="chip {% if atrasada %}atrasada{% else %}proxima{% endif %}" href="{% url 'visita_nueva' f.paciente.id tipo.id %}" title="Cargar esta visita">{{ tipo.nombre }} · {% if atrasada %}falta, era el{% else %}prevista{% endif %} {{ esperada|date:"d/m" }}</a>{% endfor %}
+    </div></td>
+    <td style="white-space:nowrap"><a class="boton azul chico" href="{% url 'elegir_visita' f.paciente.id %}">Cargar visita</a></td>
+  </tr>
+  {% empty %}<tr><td colspan="4">Todavía no hay pacientes en este estudio.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endif %}
+{% endblock %}

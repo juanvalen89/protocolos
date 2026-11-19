@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% load formato %}
+{% block contenido %}
+<h1>{{ medico.nombre }} · detalle</h1>
+<div class="barra-acciones"><a class="boton secundario" href="{% url 'medicos' %}">Volver a médicos</a></div>
+<div class="panel tabla-ancha">
+<table>
+  <thead><tr><th>Fecha</th><th>Paciente</th><th>Visita</th><th>Procedimiento</th><th class="num">Importe</th></tr></thead>
+  <tbody>
+  {% for r in realizaciones %}<tr><td>{{ r.visita.fecha|date:"d/m/Y" }}</td><td>{{ r.visita.paciente.codigo }}</td><td>{{ r.visita.tipo.nombre }}</td><td>{{ r.procedimiento.nombre }}</td><td class="num">{{ r.monto_usd|usd }}</td></tr>{% endfor %}
+  <tr class="total"><td colspan="4">Total que le corresponde</td><td class="num">{{ total|usd }}</td></tr>
+  </tbody>
+</table>
+</div>
+<div class="panel tabla-ancha"><h2>Pagos</h2>
+<table><tbody>
+  {% for p in pagos %}<tr><td>{{ p.periodo }}</td><td>{{ p.fecha|date:"d/m/Y"|default:"—" }}</td><td class="num">{{ p.monto_usd|usd }}</td><td class="num">{{ p.monto_ars|pesos|default:"—" }}</td></tr>
+  {% empty %}<tr><td>Sin pagos registrados.</td></tr>{% endfor %}
+</tbody></table>
+</div>
+{% endblock %}

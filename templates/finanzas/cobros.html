@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% load formato %}
+{% block contenido %}
+<h1>Cobros al sponsor</h1>
+<p class="bajada">La CRO manda cada trimestre una carta con las visitas a facturar. Acá se ve qué está cobrado, qué está facturado y qué espera la próxima carta.</p>
+<div class="tarjetas">
+  <div class="tarjeta ok"><div class="rotulo">Cobrado</div><div class="cifra">{{ resumen.cobrado|usd }}</div></div>
+  <div class="tarjeta {% if resumen.vencidas %}mal{% else %}alerta{% endif %}"><div class="rotulo">Facturado sin cobrar</div><div class="cifra">{{ resumen.por_cobrar|usd }}</div><div class="detalle">{{ resumen.vencido|usd }} vencido</div></div>
+  <div class="tarjeta"><div class="rotulo">Realizado sin facturar</div><div class="cifra">{{ pendientes.total|usd }}</div></div>
+</div>
+<div class="barra-acciones"><a class="boton" href="{% url 'factura_nueva' %}">Registrar una factura</a></div>
+
+<div class="panel tabla-ancha"><h2>Facturas</h2>
+<table>
+  <thead><tr><th>N.º</th><th>Fecha</th><th>Vence</th><th>Carta</th><th>Request ID</th><th class="num">Total</th><th>Estado</th><th></th></tr></thead>
+  <tbody>
+  {% for f in resumen.facturas %}
+  <tr><td><b>{{ f.numero }}</b></td><td>{{ f.fecha|date:"d/m/Y" }}</td><td>{{ f.vencimiento|date:"d/m/Y" }}</td>
+    <td>{{ f.carta.periodo|default:"—" }}</td>
+    <td>{{ f.request_id|default:"—" }}{% if f.request_id_no_coincide %}<span class="ayuda" style="color:var(--mal)">La carta dice {{ f.carta.request_id }}</span>{% endif %}</td>
+    <td class="num">{{ f.total|usd }}</td>
+    <td>{% if f.cobrada %}<span class="chip cobrada">Cobrada</span>{% elif f.vencimiento < hoy %}<span class="chip vencida">Vencida</span>{% else %}<span class="chip pendiente">Emitida</span>{% endif %}</td>
+    <td><form method="post" action="{% url 'factura_cobrada' f.id %}">{% csrf_token %}<button class="boton secundario chico">{% if f.cobrada %}Desmarcar{% else %}Marcar cobrada{% endif %}</button></form></td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+
+<div class="panel tabla-ancha"><h2>Cartas de pago recibidas</h2>
+<table>
+  <thead><tr><th>Período</th><th>Fecha</th><th>Request ID</th><th class="num">Monto</th></tr></thead>
+  <tbody>{% for c in cartas %}<tr><td>{{ c.periodo }}</td><td>{{ c.fecha|date:"d/m/Y" }}</td><td>{{ c.request_id }}</td><td class="num">{{ c.monto_usd|usd }}</td></tr>{% endfor %}</tbody>
+</table>
+<p class="ayuda">Las cartas nuevas se cargan en Configuración → Cartas de pago.</p>
+</div>
+
+<div class="panel tabla-ancha" id="sin-facturar"><h2>Realizado sin facturar</h2>
+<table>
+  <thead><tr><th>Paciente</th><th>Visita</th><th>Fecha</th><th>Concepto</th><th class="num">Importe</th></tr></thead>
+  <tbody>
+  {% for x in pendientes.visitas %}<tr><td>{{ x.visita.paciente.codigo }}</td><td>{{ x.visita.tipo.nombre }}</td><td>{{ x.visita.fecha|date:"d/m/Y" }}</td><td>Visita</td><td class="num">{{ x.monto|usd }}</td></tr>{% endfor %}
+  {% for x in pendientes.condicionales %}<tr><td>{{ x.realizacion.visita.paciente.codigo }}</td><td>{{ x.realizacion.visita.tipo.nombre }}</td><td>{{ x.realizacion.visita.fecha|date:"d/m/Y" }}</td><td>Condicional: {{ x.realizacion.procedimiento.nombre }}</td><td class="num">{{ x.monto|usd }}</td></tr>{% endfor %}
+  <tr><td colspan="4">Viáticos de {{ pendientes.viaticos|length }} visitas</td><td class="num">{{ pendientes.total_viaticos|usd }}</td></tr>
+  <tr class="total"><td colspan="4">Total sin facturar</td><td class="num">{{ pendientes.total|usd }}</td></tr>
+  </tbody>
+</table>
+</div>
+{% endblock %}
