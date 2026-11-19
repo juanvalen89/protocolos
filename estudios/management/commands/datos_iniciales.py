@@ -40,8 +40,11 @@ class Command(BaseCommand):
             tipos[nombre] = t
         medicos = {clave: Medico.objects.get_or_create(nombre=nombre, defaults={"externo": clave in malbec.EXTERNOS})[0]
                    for clave, nombre in malbec.MEDICOS.items()}
+        por_nombre = {m.nombre: m for m in medicos.values()}
+        for nombre in malbec.SOLO_DERIVAN:
+            por_nombre[nombre] = Medico.objects.get_or_create(nombre=nombre, defaults={"hace_procedimientos": False})[0]
         pacientes = {codigo: Paciente.objects.create(protocolo=protocolo, codigo=codigo, estado=estado,
-                                                     derivador=derivador, nota=nota)
+                                                     derivado_por=por_nombre.get(derivador), nota=nota)
                      for codigo, (estado, derivador, nota) in malbec.PACIENTES.items()}
 
         visitas = {}

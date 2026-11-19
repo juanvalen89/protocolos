@@ -61,9 +61,10 @@ def medico_detalle(request, pk):
     realizaciones = (Realizacion.objects.filter(medico=medico, visita__paciente__protocolo=protocolo)
                      .select_related("visita__paciente", "visita__tipo", "procedimiento")
                      .order_by("-visita__fecha", "visita__paciente__codigo", "procedimiento__orden"))
+    derivaciones = [d for d in servicios.derivaciones(protocolo) if d["medico"].id == medico.id]
     return render(request, "finanzas/medico_detalle.html", {
-        "protocolo": protocolo, "medico": medico, "realizaciones": realizaciones,
-        "total": sum((r.monto_usd for r in realizaciones), CERO),
+        "protocolo": protocolo, "medico": medico, "realizaciones": realizaciones, "derivaciones": derivaciones,
+        "total": sum((r.monto_usd for r in realizaciones), CERO) + sum((d["monto"] for d in derivaciones), CERO),
         "pagos": PagoMedico.objects.filter(protocolo=protocolo, medico=medico),
     })
 

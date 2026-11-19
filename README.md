@@ -21,6 +21,8 @@ y el sistema obliga a cambiarla en el primer ingreso.
 
 - **Médicos**: cada procedimiento cargado toma la tarifa del protocolo
   (Configuración → Protocolos). Saldo = lo que le corresponde − lo pagado.
+  A quien **deriva** un paciente se le suman USD 1.000 (configurable por
+  protocolo) cuando el paciente entra al estudio (Day 1).
   Los pagos se guardan en USD y, si se paga en pesos, con el dólar BNA vendedor del día.
 - **Cobros al sponsor**: cada visita completa vale el precio del presupuesto;
   aparte van el viático por visita y los condicionales (OCTA, FAF). Una visita

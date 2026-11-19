@@ -23,10 +23,10 @@ class TipoVisitaAdmin(admin.ModelAdmin):
 
 @admin.register(Medico)
 class MedicoAdmin(admin.ModelAdmin):
-    list_display = ["nombre", "externo", "activo"]
+    list_display = ["nombre", "hace_procedimientos", "externo", "activo"]
 
 
 @admin.register(Paciente)
 class PacienteAdmin(admin.ModelAdmin):
-    list_display = ["codigo", "protocolo", "estado", "derivador"]
+    list_display = ["codigo", "protocolo", "estado", "derivado_por"]
     list_filter = ["protocolo", "estado"]

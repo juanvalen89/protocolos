@@ -22,6 +22,9 @@ class Protocolo(models.Model):
     sitio = models.CharField("número de sitio", max_length=20, blank=True)
     investigador = models.CharField("investigador principal", max_length=80, blank=True)
     viatico_usd = models.DecimalField("viático por visita (USD)", max_digits=10, decimal_places=2, default=CERO)
+    derivacion_usd = models.DecimalField(
+        "pago al médico que deriva (USD)", max_digits=10, decimal_places=2, default=CERO,
+        help_text="Se le debe al derivador cuando el paciente entra al estudio (Day 1).")
     activo = models.BooleanField(default=True)
 
     class Meta:
@@ -36,6 +39,9 @@ class Medico(models.Model):
     externo = models.BooleanField(
         "externo (no se liquida por tarifa)", default=False,
         help_text="Laboratorio u otro prestador que factura por su cuenta: se registra quién lo hizo, sin importe.")
+    hace_procedimientos = models.BooleanField(
+        "hace procedimientos del estudio", default=True,
+        help_text="Destildar para quien solo deriva pacientes: no aparece en la carga de visitas.")
     activo = models.BooleanField(default=True)
 
     class Meta:
@@ -97,7 +103,8 @@ class Paciente(models.Model):
     protocolo = models.ForeignKey(Protocolo, on_delete=models.PROTECT, related_name="pacientes")
     codigo = models.CharField("código de sujeto", max_length=30)   # 312-21165 (nunca el nombre)
     estado = models.CharField(max_length=12, choices=Estado.choices, default=Estado.SCREENING)
-    derivador = models.CharField("derivado por", max_length=80, blank=True)
+    derivado_por = models.ForeignKey(Medico, null=True, blank=True, on_delete=models.PROTECT,
+                                     related_name="derivados", verbose_name="derivado por")
     nota = models.CharField(max_length=200, blank=True)
 
     class Meta:

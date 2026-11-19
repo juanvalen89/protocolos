@@ -5,7 +5,8 @@ from datetime import date
 from decimal import Decimal as D
 
 PROTOCOLO = dict(codigo="MK-8748-002", nombre="MALBEC", codigo_cro="EYEB1014", sponsor="Eyebio (MSD)",
-                 cro="TFS HealthScience", sitio="312", investigador="Agustina C. Palacio", viatico_usd=D("100"))
+                 cro="TFS HealthScience", sitio="312", investigador="Agustina C. Palacio", viatico_usd=D("100"),
+                 derivacion_usd=D("1000"))
 
 # nombre, tarifa al médico, precio condicional al sponsor (con overhead)
 PROCEDIMIENTOS = [
@@ -50,6 +51,7 @@ def tipos_visita():
 MEDICOS = {"PAL": "Palacio", "GRU": "Grundy", "SIL": "Silveyra", "BAR": "Baraja", "OLI": "Olivera Plata",
            "SANP": "San Pelegrini", "ORIA": "Oria", "COL": "Coloschi (laboratorio)"}
 EXTERNOS = {"COL"}
+SOLO_DERIVAN = ["Stortini", "Cenoz", "Troncoso"]
 
 # código: (estado, derivado por, nota)
 PACIENTES = {
@@ -113,8 +115,9 @@ PAGOS = [
     ("GRU", "junio 2026", "440", "1535", "Rosendi"), ("SIL", "junio 2026", "700", "1535", "Rosendi"),
     ("BAR", "junio 2026", "180", "1535", "Rosendi"), ("GRU", "julio 2026", "165", "1535", "Rosendi"),
     ("PAL", "junio a septiembre 2026", "4810", None, "Palacio"),
+    ("PAL", "derivaciones (3 pacientes)", "3000", None, "Palacio"),
 ]
-GASTOS = [("Abogado Quiendi", "3585", "Rosendi"), ("Derivaciones (Palacio)", "3000", "Palacio")]
+GASTOS = [("Abogado Quiendi", "3585", "Rosendi")]
 
 CARTAS = [("Q2 2026", "2026-07-14", "PYRQ-003462", "23969.43"), ("Q3 2026", "2026-10-13", "PYRQ-004039", "20904.00")]
 PRIMEROS = ["312-21165", "312-21185", "312-21197"]

@@ -89,13 +89,41 @@ class CalculosContraLasPlanillas(Base):
         self.assertEqual(sum(t for _, t in partes.values()), D("35365.82"))   # un centavo de redondeo
 
     def test_liquidacion_de_palacio_igual_a_la_planilla(self):
-        meses = {(m["anio"], m["mes"]): {f["medico"].nombre: f["total"] for f in m["filas"]}
+        # Solo procedimientos: las derivaciones van en su propio renglón.
+        meses = {(m["anio"], m["mes"]): {f["medico"].nombre: f["total"] - f["por_visita"].get("Derivación", 0)
+                                         for f in m["filas"]}
                  for m in servicios.detalle_por_mes(self.protocolo)}
+        junio = {f["medico"].nombre: f["por_visita"] for m in servicios.detalle_por_mes(self.protocolo)
+                 if (m["anio"], m["mes"]) == (2026, 6) for f in m["filas"]}
+        self.assertEqual(junio["Palacio"]["Derivación"], D("2000"))
+        self.assertEqual(junio["Stortini"], {"Derivación": D("1000")})
         self.assertEqual(meses[(2026, 6)]["Palacio"], D("2360"))
         self.assertEqual(meses[(2026, 7)]["Palacio"], D("900"))
         self.assertEqual(meses[(2026, 8)]["Palacio"], D("900"))
         self.assertEqual(meses[(2026, 9)]["Palacio"], D("650"))
         self.assertEqual(meses[(2026, 6)]["Silveyra"], D("700"))
+
+    def test_derivaciones_mil_dolares_al_entrar_al_estudio(self):
+        saldos = {x["medico"].nombre: x for x in servicios.saldos_medicos(self.protocolo)}
+        # Palacio derivó 3 que entraron (21165, 21185, 21787): 3.000, ya cobrados según el balance.
+        self.assertEqual(saldos["Palacio"]["devengado"], D("8210"))
+        self.assertEqual(saldos["Palacio"]["saldo"], D("400"))
+        self.assertEqual(saldos["Stortini"]["saldo"], D("1000"))
+        self.assertEqual(saldos["Cenoz"]["saldo"], D("1000"))
+        self.assertNotIn("Troncoso", saldos)   # su paciente todavía está en screening
+
+    def test_quien_solo_deriva_no_aparece_en_la_carga(self):
+        self.client.force_login(self.coordinadora)
+        paciente = Paciente.objects.get(codigo="312-21165")
+        tipo = TipoVisita.objects.get(nombre="Week 16")
+        html = self.client.get(reverse("visita_nueva", args=[paciente.id, tipo.id])).content.decode()
+        self.assertIn("Grundy", html)
+        self.assertNotIn("Stortini", html)
+        # La coordinadora anota un derivador nuevo por nombre: se crea como médico que solo deriva.
+        self.client.post(reverse("paciente_nuevo"), {"codigo": "312-30000", "estado": "screening", "derivador": "  gómez "})
+        nuevo = Paciente.objects.get(codigo="312-30000")
+        self.assertEqual(nuevo.derivado_por.nombre, "Gómez")
+        self.assertFalse(nuevo.derivado_por.hace_procedimientos)
 
     def test_facturas_y_pendientes(self):
         f = servicios.resumen_facturas(self.protocolo, date(2026, 11, 18))

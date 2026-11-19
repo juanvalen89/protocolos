@@ -87,7 +87,7 @@ def visita_form(request, paciente_id=None, tipo_id=None, pk=None):
         paciente = get_object_or_404(Paciente, pk=paciente_id, protocolo=protocolo)
         tipo = get_object_or_404(TipoVisita, pk=tipo_id, protocolo=protocolo)
         visita = None
-    medicos = list(Medico.objects.filter(activo=True))
+    medicos = list(Medico.objects.filter(activo=True, hace_procedimientos=True))
     actuales = {r.procedimiento_id: r for r in visita.realizaciones.all()} if visita else {}
     esperados_ids = set(tipo.procedimientos.values_list("id", flat=True))
     error = None

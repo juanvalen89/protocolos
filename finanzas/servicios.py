@@ -2,7 +2,7 @@
 from collections import defaultdict
 from decimal import ROUND_HALF_UP, Decimal
 
-from estudios.models import Medico, Realizacion, Visita
+from estudios.models import Medico, Paciente, Realizacion, Visita
 
 from .models import Factura, Gasto, ItemFactura, PagoMedico, Socio
 
@@ -16,11 +16,29 @@ def redondear(x):
 
 # ---------------------------------------------------------------- médicos
 
+def derivaciones(protocolo):
+    """Pacientes derivados que ya entraron al estudio (tienen Day 1): al médico
+    que derivó se le debe el importe fijo del protocolo, igual que un procedimiento.
+    Devuelve [{paciente, medico, fecha (la del Day 1), monto}]."""
+    if not protocolo.derivacion_usd:
+        return []
+    salida = []
+    qs = (Paciente.objects.filter(protocolo=protocolo, derivado_por__isnull=False)
+          .select_related("derivado_por").prefetch_related("visitas__tipo"))
+    for p in qs:
+        fecha = p.fecha_day1()
+        if fecha:
+            salida.append({"paciente": p, "medico": p.derivado_por, "fecha": fecha, "monto": protocolo.derivacion_usd})
+    return salida
+
+
 def saldos_medicos(protocolo):
     """Por médico: lo que le corresponde por lo cargado, lo pagado y el saldo."""
     devengado = defaultdict(lambda: CERO)
     for r in Realizacion.objects.filter(visita__paciente__protocolo=protocolo).select_related("medico"):
         devengado[r.medico_id] += r.monto_usd
+    for d in derivaciones(protocolo):
+        devengado[d["medico"].id] += d["monto"]
     pagado = defaultdict(lambda: CERO)
     for p in PagoMedico.objects.filter(protocolo=protocolo):
         pagado[p.medico_id] += p.monto_usd
@@ -41,6 +59,8 @@ def detalle_por_mes(protocolo):
         if r.monto_usd:
             f = r.visita.fecha
             meses[(f.year, f.month)][r.medico][r.visita.tipo.nombre] += r.monto_usd
+    for d in derivaciones(protocolo):
+        meses[(d["fecha"].year, d["fecha"].month)][d["medico"]]["Derivación"] += d["monto"]
     salida = []
     for clave in sorted(meses, reverse=True):
         filas = []

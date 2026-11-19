@@ -8,6 +8,7 @@
   <thead><tr><th>Fecha</th><th>Paciente</th><th>Visita</th><th>Procedimiento</th><th class="num">Importe</th></tr></thead>
   <tbody>
   {% for r in realizaciones %}<tr><td>{{ r.visita.fecha|date:"d/m/Y" }}</td><td>{{ r.visita.paciente.codigo }}</td><td>{{ r.visita.tipo.nombre }}</td><td>{{ r.procedimiento.nombre }}</td><td class="num">{{ r.monto_usd|usd }}</td></tr>{% endfor %}
+  {% for d in derivaciones %}<tr><td>{{ d.fecha|date:"d/m/Y" }}</td><td>{{ d.paciente.codigo }}</td><td>Day 1</td><td>Derivación del paciente</td><td class="num">{{ d.monto|usd }}</td></tr>{% endfor %}
   <tr class="total"><td colspan="4">Total que le corresponde</td><td class="num">{{ total|usd }}</td></tr>
   </tbody>
 </table>

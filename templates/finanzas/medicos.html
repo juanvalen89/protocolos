@@ -2,7 +2,7 @@
 {% load formato %}
 {% block contenido %}
 <h1>Médicos</h1>
-<p class="bajada">Lo que le corresponde a cada médico sale solo de la carga de la coordinadora. El saldo es eso menos lo ya pagado.</p>
+<p class="bajada">Lo que le corresponde a cada médico sale solo de la carga de la coordinadora. A quien deriva un paciente se le suma el pago por derivación cuando el paciente entra al estudio. El saldo es eso menos lo ya pagado.</p>
 <div class="barra-acciones"><a class="boton" href="{% url 'pago_nuevo' %}">Registrar un pago</a></div>
 <div class="panel tabla-ancha"><h2>Saldo por médico</h2>
 <table>
