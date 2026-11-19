@@ -18,7 +18,7 @@ class Command(BaseCommand):
 
     @transaction.atomic
     def handle(self, *args, **opciones):
-        if not Usuario.objects.exists():
+        if not Usuario.objects.filter(rol=Usuario.Rol.DIRECCION).exists():
             u = Usuario(username="jvalenzuela", first_name="Juan", last_name="Valenzuela",
                         rol=Usuario.Rol.DIRECCION, debe_cambiar_clave=True)
             u.set_password(CLAVE_GENERICA)
