@@ -141,6 +141,21 @@ class CalculosContraLasPlanillas(Base):
         self.assertEqual(esperadas, {"Week 16": True, "Week 20": True, "Week 24": False})
 
 
+class CoordinadorasIniciales(Base):
+    def test_caro_y_ceci_entran_solo_a_la_carga(self):
+        for usuario in ["caro", "ceci"]:
+            u = Usuario.objects.get(username=usuario)
+            self.assertFalse(u.ve_numeros)
+            self.assertFalse(u.is_staff)
+            self.assertTrue(u.debe_cambiar_clave)
+            self.assertTrue(self.client.login(username=usuario, password="Loria.Protocolos.2026"))
+            self.assertRedirects(self.client.get(reverse("pacientes")), reverse("password_change"))
+            u.debe_cambiar_clave = False
+            u.save()
+            self.assertEqual(self.client.get(reverse("pacientes")).status_code, 200)
+            self.assertEqual(self.client.get(reverse("tablero")).status_code, 403)
+
+
 class DireccionVeTodo(Base):
     def test_todas_las_pantallas_abren(self):
         self.client.force_login(self.direccion)
